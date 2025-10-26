@@ -23,10 +23,8 @@
     ],
     "etiquetasDieteticas": ["Contiene Gluten", "Contiene Lácteos"],
     "confirmado": true,
-    "likes": [1, 2],
-    "comentarios": [
-      { "id": 1, "autorId": 2, "autorNombre": "Eduardo Chacana", "texto": "¡Qué buena receta! La probé y quedó genial." }
-      ]
+    "likes": [],
+    "comentarios": []
   },
   {
     "id": 102,
@@ -34,7 +32,7 @@
     "descripcion": "Una versión deliciosa y 100% vegetal de la clásica ensalada César.",
     "tiempoPreparacion": "20 min",
     "autorId": 2,
-    "autorNombre": "Eduardo Chacana",
+    "autorNombre": "Usuario Invitado",
     "foto": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500",
     "ingredientes": [
       { "nombre": "Lechuga romana", "cantidad": "1 unidad" },
@@ -52,7 +50,7 @@
     ],
     "etiquetasDieteticas": ["Vegano", "Sin Lácteos", "Apto para Diabéticos"],
     "confirmado": true,
-    "likes": [1],
+    "likes": [],
     "comentarios": []
   },
   {
