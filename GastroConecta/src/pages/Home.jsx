@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import { OPCIONES_DIETETICAS } from '../data/constants'; // Asegúrate que src/data/constants.js exista
 
 export default function Home() {
-  const auth = useAuth(); 
+  const auth = useAuth(); // Obtenemos el contexto completo
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
@@ -19,7 +19,7 @@ export default function Home() {
   };
 
   // --- FUNCIÓN handleSearch REVISADA ---
- const handleSearch = (e) => {
+  const handleSearch = (e) => {
     e.preventDefault();
     setHasSearched(true); 
 
@@ -27,7 +27,12 @@ export default function Home() {
     const term = searchTerm.toLowerCase();
 
     let filteredRecetas = recetasActuales.filter(receta => {
-    
+        
+        // --- ¡CAMBIO REALIZADO! ---
+        // Se ha eliminado el filtro por 'confirmado'. 
+        // Ahora todas las recetas pasan a la lógica de búsqueda por término.
+        // --- --- --- --- --- --- ---
+
         // 3. Lógica de búsqueda por término
         const tituloMatch = receta.titulo && receta.titulo.toLowerCase().includes(term);
         const descMatch = receta.descripcion && receta.descripcion.toLowerCase().includes(term);
@@ -47,12 +52,12 @@ export default function Home() {
   };
   // --- FIN DE FUNCIÓN handleSearch ---
 
-  // Estilo Hero dinámico
+  // Estilo Hero dinámico con altura condicional
   const heroStyle = {
     padding: '1rem', 
     backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("./background.jpg")`,
     backgroundSize: 'cover',
-    backgroundPosition: 'center', 
+    backgroundPosition: 'center',
     color: 'white',
     width: '100%',
     margin: 0,
@@ -60,7 +65,7 @@ export default function Home() {
     alignItems: 'center',
     justifyContent: 'center',
     height: !hasSearched ? '78.5vh' : 'auto',
-    transition: 'height 0.3s ease-in-out', 
+    transition: 'height 0.3s ease-in-out',
   };
 
   return (
@@ -118,6 +123,6 @@ export default function Home() {
         </Container>
       )}
 
-    </div> 
+    </div> // CIERRE DEL DIV PRINCIPAL
   );
 }
