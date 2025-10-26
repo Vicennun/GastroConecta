@@ -4,10 +4,10 @@ import React from 'react';
 import { Card, Button } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 
-// Usamos "destructuring" para recibir la receta como prop
 export default function RecetaCard({ receta }) {
   return (
-    <Card className="mb-4">
+    // 1. Añadimos clases para sombra y quitar borde
+    <Card className="mb-4 shadow-sm border-0">
       <Card.Img 
         variant="top" 
         src={receta.foto} 
@@ -16,6 +16,14 @@ export default function RecetaCard({ receta }) {
       />
       <Card.Body>
         <Card.Title>{receta.titulo}</Card.Title>
+        
+        {/* 2. Añadimos el tiempo de preparación */}
+        <Card.Subtitle className="mb-2 text-muted">
+          <small>
+            Tiempo: {receta.tiempoPreparacion || 'No especificado'}
+          </small>
+        </Card.Subtitle>
+
         <Card.Text>
           Por: {receta.autorNombre}
         </Card.Text>

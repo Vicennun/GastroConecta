@@ -1,3 +1,5 @@
+/* src/index.css (CÓDIGO FINAL CORREGIDO) */
+
 :root {
   font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
   line-height: 1.5;
@@ -24,11 +26,17 @@ a:hover {
 
 body {
   margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  /* Quitamos el 'min-height' de aquí para dárselo a #root */
 }
+
+/* --- ESTA ES LA CORRECCIÓN CLAVE --- */
+#root {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh; /* <-- "Altura mínima", no "altura fija" */
+}
+/* ---------------------------------- */
+
 
 h1 {
   font-size: 3.2em;

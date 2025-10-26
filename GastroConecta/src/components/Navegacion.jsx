@@ -1,19 +1,20 @@
 // src/components/Navegacion.jsx
 
 import React from 'react';
-import { Navbar, Nav, Container, Button } from 'react-bootstrap'; // Añade Button
+import { Navbar, Nav, Container, Button } from 'react-bootstrap';
 import { LinkContainer } from 'react-router-bootstrap';
-import { useAuth } from '../context/AuthContext'; // --- 1. Importa el Hook ---
+import { useAuth } from '../context/AuthContext';
 
 export default function Navegacion() {
   
-  // --- 2. Usa el contexto ---
   const { usuarioActual, logout } = useAuth();
-  // 'usuarioActual' será un objeto (si está logueado) o 'null' (si no)
 
   return (
-    <Navbar expand="lg" bg="dark" variant="dark" className="mb-4">
-      <Container>
+    // 'mb-4' añade un margen abajo
+    <Navbar expand="lg" bg="dark" variant="dark">
+      
+      {/* --- AQUÍ ESTÁ EL CAMBIO --- */}
+      <Container fluid> 
         
         <LinkContainer to="/">
           <Navbar.Brand>GastroConecta</Navbar.Brand>
@@ -24,7 +25,6 @@ export default function Navegacion() {
         <Navbar.Collapse id="basic-navbar-nav">
           
           <Nav className="me-auto">
-            {/* ... (links de Inicio y Buscar quedan igual) ... */}
             <LinkContainer to="/">
               <Nav.Link>Inicio</Nav.Link>
             </LinkContainer>
@@ -34,9 +34,7 @@ export default function Navegacion() {
           </Nav>
 
           <Nav>
-            {/* --- 3. Comprueba 'usuarioActual' en lugar de 'usuarioLogueado' --- */}
             {usuarioActual ? ( 
-              // --- Si está logueado ---
               <>
                 <LinkContainer to="/crear-receta">
                   <Nav.Link>Crear Receta</Nav.Link>
@@ -45,13 +43,11 @@ export default function Navegacion() {
                   <Nav.Link>Hola, {usuarioActual.nombre}</Nav.Link>
                 </LinkContainer>
                 
-                {/* --- 4. Botón de Logout --- */}
                 <Button variant="outline-secondary" onClick={logout} className="ms-2">
                   Cerrar Sesión
                 </Button>
               </>
             ) : (
-              // --- Si es visitante ---
               <>
                 <LinkContainer to="/login">
                   <Nav.Link>Iniciar Sesión</Nav.Link>
@@ -64,7 +60,8 @@ export default function Navegacion() {
           </Nav>
 
         </Navbar.Collapse>
-      </Container>
+        
+      </Container> {/* --- CIERRA EL 'fluid' --- */}
     </Navbar>
   );
 }
