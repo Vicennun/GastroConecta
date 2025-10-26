@@ -79,7 +79,10 @@ export default function CrearReceta() {
       foto: fotoUrl || 'https://via.placeholder.com/300x200.png?text=Sin+Foto',
       ingredientes: ingredientesArray,
       pasos: pasosArray,
-      etiquetasDieteticas: etiquetas
+      etiquetasDieteticas: etiquetas,
+      confirmado: false, 
+      likes: [], 
+      comentarios: []
     };
 
     // --- 3. CAMBIO EN LA LÓGICA DE GUARDADO ---
