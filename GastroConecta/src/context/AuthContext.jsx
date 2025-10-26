@@ -1,15 +1,47 @@
 // src/context/AuthContext.jsx
 
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 // Importamos los datos iniciales
 import recetasData from '../data/recetas.json';
 
 // --- Funciones auxiliares para localStorage ---
 
-// Carga "usuarios" desde localStorage. Si no existe, devuelve [].
+const usuariosData = [
+  {
+    "id": 1,
+    "nombre": "Vicente Núñez",
+    "email": "vicente@mail.com",
+    "password": "123", // Simulamos una contraseña
+    "recetario": [],
+    "siguiendo": [],
+    "seguidores": []
+  },
+  {
+    "id": 2,
+    "nombre": "Eduardo Chacana",
+    "email": "eduardo@mail.com",
+    "password": "123",
+    "recetario": [],
+    "siguiendo": [],
+    "seguidores": []
+  }
+];
+// --- --- --- --- --- --- --- --- --- ---
+
+// --- Funciones auxiliares para localStorage ---
+
+// Carga "usuarios" desde localStorage. Si no existe, usa los datos iniciales.
 const getUsuariosDB = () => {
   const usuarios = localStorage.getItem('usuarios');
-  return usuarios ? JSON.parse(usuarios) : [];
+  
+  // --- LÓGICA ACTUALIZADA ---
+  if (usuarios) {
+    return JSON.parse(usuarios);
+  } else {
+    // Si es la primera vez, guarda los usuarios base en localStorage
+    localStorage.setItem('usuarios', JSON.stringify(usuariosData));
+    return usuariosData;
+  }
 };
 
 // Carga "recetas" desde localStorage. Si no existe, usa las del JSON.
@@ -24,7 +56,6 @@ const getRecetasDB = () => {
   }
 };
 
-// Carga el usuario "logueado" desde localStorage.
 const getCurrentUserDB = () => {
   const user = localStorage.getItem('currentUser');
   return user ? JSON.parse(user) : null;
@@ -40,81 +71,192 @@ export const useAuth = () => {
 // --- Proveedor del Contexto ---
 export const AuthProvider = ({ children }) => {
   
-  // --- ESTADOS GLOBALES ---
-  const [usuarioActual, setUsuarioActual] = useState(getCurrentUserDB); // Usuario logueado
-  const [recetas, setRecetas] = useState(getRecetasDB);                 // Lista de recetas
-  const [usuarios, setUsuarios] = useState(getUsuariosDB);               // Lista de usuarios
+  const [usuarioActual, setUsuarioActual] = useState(getCurrentUserDB); 
+  const [recetas, setRecetas] = useState(getRecetasDB);
+  const [usuarios, setUsuarios] = useState(getUsuariosDB);
 
-  // --- FUNCIONES DE AUTENTICACIÓN (Tus Tareas 1 y 2) ---
+  // --- EFECTO PARA SINCRONIZAR ESTADOS ---
+  useEffect(() => {
+    if (usuarioActual) {
+      const usuarioActualizado = usuarios.find(u => u.id === usuarioActual.id);
+      if (usuarioActualizado) {
+        setUsuarioActual(usuarioActualizado);
+        localStorage.setItem('currentUser', JSON.stringify(usuarioActualizado));
+      }
+    }
+  }, [usuarios, usuarioActual?.id]); // Dependencia ajustada
+
+
+  // --- FUNCIONES DE AUTENTICACIÓN ---
 
   const register = (nombre, email, password) => {
-    const usuariosDB = getUsuariosDB(); // Obtiene la lista fresca
+    const usuariosDB = getUsuariosDB(); 
     
-    // 1. Revisa si el email ya existe
     const existeUsuario = usuariosDB.find(u => u.email === email);
     if (existeUsuario) {
       throw new Error('El email ya está registrado');
     }
 
-    // 2. Crea el nuevo usuario (simulamos un ID)
     const nuevoUsuario = {
       id: Date.now(),
       nombre,
       email,
-      password // En una app real, esto debería estar encriptado
+      password,
+      recetario: [],
+      siguiendo: [],
+      seguidores: [] // <--- AÑADIDO
     };
 
-    // 3. Guarda la nueva lista de usuarios en localStorage
     const nuevaListaUsuarios = [...usuariosDB, nuevoUsuario];
     localStorage.setItem('usuarios', JSON.stringify(nuevaListaUsuarios));
-    setUsuarios(nuevaListaUsuarios); // Actualiza el estado
+    setUsuarios(nuevaListaUsuarios);
     
-    // 4. Inicia sesión automáticamente
     login(email, password);
   };
 
   const login = (email, password) => {
     const usuariosDB = getUsuariosDB();
     
-    // 1. Busca al usuario
     const usuarioEncontrado = usuariosDB.find(
       u => u.email === email && u.password === password
     );
 
     if (usuarioEncontrado) {
-      // 2. Guarda el usuario logueado en localStorage para persistir la sesión
       localStorage.setItem('currentUser', JSON.stringify(usuarioEncontrado));
-      setUsuarioActual(usuarioEncontrado); // Actualiza el estado
+      setUsuarioActual(usuarioEncontrado); 
     } else {
       throw new Error('Email o contraseña incorrectos');
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('currentUser'); // Borra la sesión
-    setUsuarioActual(null); // Actualiza el estado
+    localStorage.removeItem('currentUser');
+    setUsuarioActual(null);
   };
 
-  // --- FUNCIONES DE RECETAS (Tu Tarea 4) ---
+  // --- FUNCIONES DE RECETAS ---
 
   const agregarReceta = (nuevaReceta) => {
-    // 1. Añade la nueva receta al principio de la lista
     const nuevaListaRecetas = [nuevaReceta, ...recetas];
-    
-    // 2. Guarda la lista actualizada en localStorage
     localStorage.setItem('recetas', JSON.stringify(nuevaListaRecetas));
-    setRecetas(nuevaListaRecetas); // Actualiza el estado
+    setRecetas(nuevaListaRecetas);
   };
+
+  // --- NUEVAS FUNCIONALIDADES ---
+
+  const toggleLikeReceta = (recetaId) => {
+    if (!usuarioActual) return;
+
+    const nuevasRecetas = recetas.map(r => {
+      if (r.id === recetaId) {
+        const likesActualizados = r.likes.includes(usuarioActual.id)
+          ? r.likes.filter(id => id !== usuarioActual.id)
+          : [...r.likes, usuarioActual.id];
+        return { ...r, likes: likesActualizados };
+      }
+      return r;
+    });
+
+    setRecetas(nuevasRecetas);
+    localStorage.setItem('recetas', JSON.stringify(nuevasRecetas));
+  };
+
+  const toggleGuardarReceta = (recetaId) => {
+    if (!usuarioActual) return;
+
+    let usuarioActualizado;
+    
+    const nuevosUsuarios = usuarios.map(u => {
+      if (u.id === usuarioActual.id) {
+        const recetarioActualizado = u.recetario.includes(recetaId)
+          ? u.recetario.filter(id => id !== recetaId) 
+          : [...u.recetario, recetaId]; 
+        
+        usuarioActualizado = { ...u, recetario: recetarioActualizado };
+        return usuarioActualizado;
+      }
+      return u;
+    });
+
+    setUsuarios(nuevosUsuarios);
+    localStorage.setItem('usuarios', JSON.stringify(nuevosUsuarios));
+    setUsuarioActual(usuarioActualizado);
+    localStorage.setItem('currentUser', JSON.stringify(usuarioActualizado));
+  };
+
+  const agregarComentario = (recetaId, textoComentario) => {
+    if (!usuarioActual) return;
+
+    const nuevoComentario = {
+      id: Date.now(),
+      autorId: usuarioActual.id,
+      autorNombre: usuarioActual.nombre,
+      texto: textoComentario,
+      fecha: new Date().toISOString()
+    };
+
+    const nuevasRecetas = recetas.map(r => {
+      if (r.id === recetaId) {
+        return { ...r, comentarios: [nuevoComentario, ...r.comentarios] };
+      }
+      return r;
+    });
+
+    setRecetas(nuevasRecetas);
+    localStorage.setItem('recetas', JSON.stringify(nuevasRecetas));
+  };
+
+  // --- LÓGICA DE SEGUIR (ACTUALIZADA) ---
+  const toggleSeguirUsuario = (autorId) => {
+    if (!usuarioActual || usuarioActual.id === autorId) return;
+
+    const estoySiguiendo = usuarioActual.siguiendo.includes(autorId);
+    let usuarioActualizado;
+
+    const nuevosUsuarios = usuarios.map(u => {
+      // Caso 1: Actualizar al usuario actual (el que sigue)
+      if (u.id === usuarioActual.id) {
+        const siguiendoActualizado = estoySiguiendo
+          ? u.siguiendo.filter(id => id !== autorId) // Dejar de seguir
+          : [...u.siguiendo, autorId]; // Seguir
+        
+        usuarioActualizado = { ...u, siguiendo: siguiendoActualizado };
+        return usuarioActualizado;
+      }
+      
+      // Caso 2: Actualizar al usuario seguido (el autor)
+      if (u.id === autorId) {
+        const seguidoresActualizado = estoySiguiendo
+          ? u.seguidores.filter(id => id !== usuarioActual.id) // Pierde un seguidor
+          : [...(u.seguidores || []), usuarioActual.id]; // Gana un seguidor
+        
+        return { ...u, seguidores: seguidoresActualizado };
+      }
+
+      return u;
+    });
+
+    setUsuarios(nuevosUsuarios);
+    localStorage.setItem('usuarios', JSON.stringify(nuevosUsuarios));
+    setUsuarioActual(usuarioActualizado);
+    localStorage.setItem('currentUser', JSON.stringify(usuarioActualizado));
+  };
+  // --- FIN DE LÓGICA DE SEGUIR ---
 
 
   // --- Valor que se pasa a los componentes ---
   const value = {
     usuarioActual,
-    recetas,        // <--- Nuevo
+    recetas,
+    usuarios,
     login,
-    register,     // <--- Nuevo
+    register,
     logout,
-    agregarReceta,  // <--- Nuevo
+    agregarReceta,
+    toggleLikeReceta,
+    toggleGuardarReceta,
+    agregarComentario,
+    toggleSeguirUsuario 
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
