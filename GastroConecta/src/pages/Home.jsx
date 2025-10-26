@@ -7,11 +7,11 @@ import { useAuth } from '../context/AuthContext';
 import { OPCIONES_DIETETICAS } from '../data/constants'; // Asegúrate que src/data/constants.js exista
 
 export default function Home() {
-  const auth = useAuth(); // Obtenemos el contexto completo para acceso dinámico a recetas
+  const auth = useAuth(); 
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedFilters, setSelectedFilters] = useState([]);
   const [searchResults, setSearchResults] = useState([]);
-  const [hasSearched, setHasSearched] = useState(false); // Estado clave para layout y resultados
+  const [hasSearched, setHasSearched] = useState(false); 
 
   const handleFilterChange = (e) => {
     const { value, checked } = e.target;
@@ -21,18 +21,23 @@ export default function Home() {
   // --- FUNCIÓN handleSearch REVISADA ---
   const handleSearch = (e) => {
     e.preventDefault();
-    setHasSearched(true); // Muy importante: activa la vista de resultados y ajusta el layout
+    setHasSearched(true); 
 
-    // Obtenemos las recetas MÁS RECIENTES desde el contexto AQUÍ DENTRO
-    const recetasActuales = auth.recetas || []; // Usamos || [] por seguridad
+    const recetasActuales = auth.recetas || []; 
 
     const term = searchTerm.toLowerCase();
 
     // Filtramos asegurándonos que los campos existan antes de llamar a .toLowerCase() o .some()
     let filteredRecetas = recetasActuales.filter(receta => {
+        // --- NUEVO: Solo buscar en recetas confirmadas ---
+        if (!receta.confirmado) {
+          return false;
+        }
+
         const tituloMatch = receta.titulo && receta.titulo.toLowerCase().includes(term);
         const descMatch = receta.descripcion && receta.descripcion.toLowerCase().includes(term);
         const ingMatch = Array.isArray(receta.ingredientes) && receta.ingredientes.some(ing => ing.nombre && ing.nombre.toLowerCase().includes(term));
+        
         return tituloMatch || descMatch || ingMatch;
     });
 
@@ -47,30 +52,26 @@ export default function Home() {
   };
   // --- FIN DE FUNCIÓN handleSearch ---
 
-  // Estilo Hero dinámico con altura condicional (tu solución)
+  // Estilo Hero dinámico
   const heroStyle = {
-    padding: '1rem', // Padding reducido
+    padding: '1rem', 
     backgroundImage: `linear-gradient(rgba(0, 0, 0, 0.5), rgba(0, 0, 0, 0.5)), url("./background.jpg")`,
     backgroundSize: 'cover',
-    backgroundPosition: 'center', // O 'bottom center'
+    backgroundPosition: 'center', 
     color: 'white',
     width: '100%',
     margin: 0,
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    // CLAVE: Altura fija SOLO si !hasSearched
     height: !hasSearched ? '78.5vh' : 'auto',
-    transition: 'height 0.3s ease-in-out', // Opcional
+    transition: 'height 0.3s ease-in-out', 
   };
 
   return (
-    // DIV PRINCIPAL: Flex column, ocupa espacio (flex-grow-1)
-    // Ya NO necesita justify-content-center
     <div className="d-flex flex-column flex-grow-1">
 
       {/* --- SECCIÓN HERO (ROW) --- */}
-      {/* Aplicamos el estilo con altura condicional */}
       <Row className="justify-content-center text-center gx-0 w-100" style={heroStyle}>
         <Col lg={8} md={10} xs={12}>
           <h1>Encuentra tu Próxima Receta Favorita</h1>
@@ -105,8 +106,6 @@ export default function Home() {
       </Row>
 
       {/* --- SECCIÓN DE RESULTADOS --- */}
-      {/* Aparece solo si hasSearched */}
-      {/* Con flex-grow-1 para empujar el footer */}
       {hasSearched && (
         <Container className="mt-4 py-4 flex-grow-1">
           <Row>
@@ -124,6 +123,6 @@ export default function Home() {
         </Container>
       )}
 
-    </div> // CIERRE DEL DIV PRINCIPAL
+    </div> 
   );
 }
