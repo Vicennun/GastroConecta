@@ -13,6 +13,7 @@ import DetalleReceta from './pages/DetalleReceta';
 import MiPerfil from './pages/MiPerfil';
 import Buscar from './pages/Buscar'; // Página placeholder
 import Footer from './components/Footer'; // Revisa si tu archivo se llama Footer.jsx o footer.jsx
+import PerfilUsuario from './pages/PerfilUsuario'; // <-- 1. IMPORTAR
 
 function App() {
   return (
@@ -28,6 +29,7 @@ function App() {
           <Route path="/crear-receta" element={<CrearReceta />} />
           <Route path="/receta/:id" element={<DetalleReceta />} />
           <Route path="/mi-perfil" element={<MiPerfil />} />
+          <Route path="/perfil/:id" element={<PerfilUsuario />} /> 
           <Route path="/buscar" element={<Buscar />} />
         </Routes>
       </div>
