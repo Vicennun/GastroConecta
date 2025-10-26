@@ -1,0 +1,72 @@
+[
+  {
+    "id": 101,
+    "titulo": "Lasaña de Carne Clásica",
+    "descripcion": "Una receta infalible de lasaña de carne que siempre triunfa.",
+    "tiempoPreparacion": "90 min",
+    "autorId": 1, 
+    "autorNombre": "Vicente Núñez",
+    "foto": "https://images.unsplash.com/photo-1619895092633-9c1b38520867?w=500",
+    "ingredientes": [
+      { "nombre": "Placas de lasaña", "cantidad": "12 unidades" },
+      { "nombre": "Carne molida", "cantidad": "500g" },
+      { "nombre": "Salsa de tomate", "cantidad": "800g" },
+      { "nombre": "Queso Parmesano", "cantidad": "100g" },
+      { "nombre": "Salsa bechamel", "cantidad": "500ml" }
+    ],
+    "pasos": [
+      "Cocinar la carne molida con la salsa de tomate.",
+      "Cocer las placas de lasaña según las instrucciones.",
+      "En una fuente para horno, alternar capas de placas, salsa de carne y bechamel.",
+      "Espolvorear con queso parmesano.",
+      "Hornear a 180°C durante 30 minutos."
+    ],
+    "etiquetasDieteticas": ["Contiene Gluten", "Contiene Lácteos"]
+  },
+  {
+    "id": 102,
+    "titulo": "Ensalada César Vegana",
+    "descripcion": "Una versión deliciosa y 100% vegetal de la clásica ensalada César.",
+    "tiempoPreparacion": "20 min",
+    "autorId": 2,
+    "autorNombre": "Usuario Invitado",
+    "foto": "https://images.unsplash.com/photo-1512621776951-a57141f2eefd?w=500",
+    "ingredientes": [
+      { "nombre": "Lechuga romana", "cantidad": "1 unidad" },
+      { "nombre": "Crutones de pan", "cantidad": "1 taza" },
+      { "nombre": "Tofu firme", "cantidad": "200g" },
+      { "nombre": "Anacardos (para la salsa)", "cantidad": "1/2 taza" },
+      { "nombre": "Levadura nutricional", "cantidad": "2 cdas" }
+    ],
+    "pasos": [
+      "Remojar los anacardos durante 1 hora.",
+      "Licuar los anacardos con agua, levadura nutricional, ajo y limón para hacer el aderezo.",
+      "Cortar el tofu en cubos y dorarlo en una sartén.",
+      "Lavar y cortar la lechuga.",
+      "Mezclar la lechuga, los crutones, el tofu y el aderezo."
+    ],
+    "etiquetasDieteticas": ["Vegano", "Sin Lácteos", "Apto para Diabéticos"]
+  },
+  {
+    "id": 103,
+    "titulo": "Pollo al Curry Rápido",
+    "descripcion": "Un plato sabroso y reconfortante listo en menos de 30 minutos.",
+    "tiempoPreparacion": "25 min",
+    "autorId": 1,
+    "autorNombre": "Vicente Núñez",
+    "foto": "https://images.unsplash.com/photo-1565557623262-b27c67d124fd?w=500",
+    "ingredientes": [
+      { "nombre": "Pechuga de pollo", "cantidad": "400g" },
+      { "nombre": "Leche de coco", "cantidad": "400ml" },
+      { "nombre": "Curry en polvo", "cantidad": "2 cdas" },
+      { "nombre": "Arroz basmati", "cantidad": "1 taza" }
+    ],
+    "pasos": [
+      "Cortar el pollo en cubos y dorarlo en una sartén.",
+      "Añadir el curry en polvo y cocinar por 1 minuto.",
+      "Verter la leche de coco y cocinar a fuego lento por 15 minutos.",
+      "Servir sobre el arroz basmati cocido."
+    ],
+    "etiquetasDieteticas": ["Sin Gluten", "Sin Lácteos"]
+  }
+]
