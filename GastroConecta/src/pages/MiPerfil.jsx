@@ -1,111 +1,129 @@
+// src/pages/MiPerfil.jsx
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-import { Container, Row, Col, Card, Alert, Badge, ListGroup } from 'react-bootstrap';
-import { Link, Navigate } from 'react-router-dom';
-import RecetaCard from '../components/RecetaCard'; // Reutilizamos la card
+// 1. Añadimos Link
+import { Container, Row, Col, Card, Tab, Nav, ListGroup } from 'react-bootstrap';
+import { Link, Navigate } from 'react-router-dom'; // <-- 1. IMPORTAR LINK
+import RecetaCard from '../components/RecetaCard';
 
 export default function MiPerfil() {
   const { usuarioActual, recetas, usuarios } = useAuth();
 
-  // Si no hay usuario, redirigir al Login
   if (!usuarioActual) {
-    return <Navigate to="/login" replace />;
+    return <Navigate to="/login" />;
   }
 
-  // --- 1. Filtrar las recetas creadas por el usuario ---
-  const misRecetasCreadas = recetas
-    .filter(receta => receta.autorId === usuarioActual.id)
-    .sort((a, b) => b.id - a.id); // Ordenar por más nuevas primero
+  const siguiendo = usuarioActual.siguiendo || [];
+  const seguidores = usuarioActual.seguidores || [];
 
-  // --- 2. Obtener las recetas guardadas (Recetario Personal) ---
-  const miRecetarioIds = usuarioActual.recetario || [];
-  const misRecetasGuardadas = recetas.filter(receta => 
-    miRecetarioIds.includes(receta.id)
+  const listaSiguiendo = usuarios.filter(u => siguiendo.includes(u.id));
+  const listaSeguidores = usuarios.filter(u => seguidores.includes(u.id));
+
+  const misRecetas = recetas.filter(
+    (r) => r.autorId === usuarioActual.id
   );
-
-  // --- 3. Obtener la lista de usuarios que sigue ---
-  const siguiendoIds = usuarioActual.siguiendo || [];
-  const usuariosSiguiendo = usuarios.filter(u => siguiendoIds.includes(u.id));
+  const recetasGuardadas = recetas.filter(
+    (r) => usuarioActual.recetario.includes(r.id)
+  );
 
   return (
     <Container className="my-5">
       <Row className="justify-content-center">
-        {/* --- Columna de Información Personal --- */}
-        <Col md={4}>
-          <Card className="mb-4 shadow-sm border-0">
-            <Card.Body className="text-center">
-              <Card.Title as="h2" className="mb-3">{usuarioActual.nombre}</Card.Title>
-              <Card.Text className="text-muted">{usuarioActual.email}</Card.Text>
-              {/* Aquí podrías agregar un botón para "Editar Perfil" en el futuro */}
+        <Col md={10}>
+          <Card className="shadow-sm border-0">
+            <Card.Header as="h2" className="text-center p-3">
+              Mi Perfil
+            </Card.Header>
+            <Card.Body className="p-4">
+              <Card.Title>{usuarioActual.nombre}</Card.Title>
+              <Card.Subtitle className="mb-4 text-muted">
+                {usuarioActual.email}
+              </Card.Subtitle>
+              
+              <hr />
+
+              <Tab.Container defaultActiveKey="mis-recetas">
+                <Nav variant="pills" className="mb-3 flex-wrap"> 
+                  <Nav.Item>
+                    <Nav.Link eventKey="mis-recetas">Mis Recetas ({misRecetas.length})</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link eventKey="guardadas">Mi Recetario ({recetasGuardadas.length})</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link eventKey="siguiendo">Siguiendo ({listaSiguiendo.length})</Nav.Link>
+                  </Nav.Item>
+                  <Nav.Item>
+                    <Nav.Link eventKey="seguidores">Seguidores ({listaSeguidores.length})</Nav.Link>
+                  </Nav.Item>
+                </Nav>
+                
+                <Tab.Content>
+                  {/* ... (Pestañas Mis Recetas y Guardadas sin cambios) ... */}
+                  <Tab.Pane eventKey="mis-recetas">
+                    <Row>
+                      {misRecetas.length > 0 ? (
+                        misRecetas.map((receta) => (
+                          <Col md={6} lg={4} key={receta.id} className="mb-4">
+                            <RecetaCard receta={receta} />
+                          </Col>
+                        ))
+                      ) : (
+                        <Col><p className="text-muted">Aún no has creado ninguna receta.</p></Col>
+                      )}
+                    </Row>
+                  </Tab.Pane>
+                  <Tab.Pane eventKey="guardadas">
+                    <Row>
+                      {recetasGuardadas.length > 0 ? (
+                        recetasGuardadas.map((receta) => (
+                          <Col md={6} lg={4} key={receta.id} className="mb-4">
+                            <RecetaCard receta={receta} />
+                          </Col>
+                        ))
+                      ) : (
+                        <Col><p className="text-muted">Aún no has guardado recetas.</p></Col>
+                      )}
+                    </Row>
+                  </Tab.Pane>
+
+
+                  {/* --- 2. CONTENIDO DE PESTAÑAS ACTUALIZADO --- */}
+                  <Tab.Pane eventKey="siguiendo">
+                    <ListGroup variant="flush">
+                      {listaSiguiendo.length > 0 ? (
+                        listaSiguiendo.map(user => (
+                          // Convertido en un Link clickeable
+                          <ListGroup.Item key={user.id} as={Link} to={`/perfil/${user.id}`} action>
+                            {user.nombre}
+                          </ListGroup.Item>
+                        ))
+                      ) : (
+                        <p className="text-muted">Aún no sigues a nadie.</p>
+                      )}
+                    </ListGroup>
+                  </Tab.Pane>
+                  <Tab.Pane eventKey="seguidores">
+                    <ListGroup variant="flush">
+                      {listaSeguidores.length > 0 ? (
+                        listaSeguidores.map(user => (
+                          // Convertido en un Link clickeable
+                          <ListGroup.Item key={user.id} as={Link} to={`/perfil/${user.id}`} action>
+                            {user.nombre}
+                          </ListGroup.Item>
+                        ))
+                      ) : (
+                        <p className="text-muted">Aún no tienes seguidores.</p>
+                      )}
+                    </ListGroup>
+                  </Tab.Pane>
+                  {/* --- FIN DEL CAMBIO --- */}
+
+                </Tab.Content>
+              </Tab.Container>
+
             </Card.Body>
           </Card>
-
-          <Card className="mb-4 shadow-sm border-0">
-            <Card.Body>
-              <Card.Title as="h5">Siguiendo ({usuariosSiguiendo.length})</Card.Title>
-              <ListGroup variant="flush">
-                {usuariosSiguiendo.length > 0 ? (
-                  usuariosSiguiendo.map(u => (
-                    <ListGroup.Item key={u.id}>
-                      {u.nombre}
-                      {/* En el futuro, esto podría ser un <Link> al perfil público de ese usuario */}
-                    </ListGroup.Item>
-                  ))
-                ) : (
-                  <ListGroup.Item className="text-muted">No sigues a nadie aún.</ListGroup.Item>
-                )}
-              </ListGroup>
-            </Card.Body>
-          </Card>
-        </Col>
-
-        {/* --- Columna de Recetas (Creadas y Guardadas) --- */}
-        <Col md={8}>
-          
-          {/* --- Mis Recetas Creadas --- */}
-          <h3 className="mb-3">Mis Recetas Creadas</h3>
-          <Row>
-            {misRecetasCreadas.length > 0 ? (
-              misRecetasCreadas.map(receta => (
-                <Col md={6} lg={6} key={receta.id} className="mb-4">
-                  {/* Mostramos el estado "Pendiente" si no está confirmada */}
-                  {!receta.confirmado && (
-                    <Badge bg="warning" text="dark" className="mb-1">
-                      Pendiente de Aprobación
-                    </Badge>
-                  )}
-                  <RecetaCard receta={receta} />
-                </Col>
-              ))
-            ) : (
-              <Col xs={12}>
-                <Alert variant="secondary">
-                  No has creado ninguna receta. ¡<Link to="/crear-receta">Anímate a crear una</Link>!
-                </Alert>
-              </Col>
-            )}
-          </Row>
-
-          <hr className="my-4" />
-
-          {/* --- Mi Recetario (Guardadas) --- */}
-          <h3 className="mb-3">Mi Recetario (Recetas Guardadas)</h3>
-          <Row>
-            {misRecetasGuardadas.length > 0 ? (
-              misRecetasGuardadas.map(receta => (
-                <Col md={6} lg={6} key={receta.id} className="mb-4">
-                  <RecetaCard receta={receta} />
-                </Col>
-              ))
-            ) : (
-              <Col xs={12}>
-                <Alert variant="secondary">
-                  No has guardado ninguna receta. Explora el <Link to="/">inicio</Link> y guarda las que te gusten.
-                </Alert>
-              </Col>
-            )}
-          </Row>
-          
         </Col>
       </Row>
     </Container>
