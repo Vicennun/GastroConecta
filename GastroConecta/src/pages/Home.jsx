@@ -19,28 +19,23 @@ export default function Home() {
   };
 
   // --- FUNCIÓN handleSearch REVISADA ---
-  const handleSearch = (e) => {
+ const handleSearch = (e) => {
     e.preventDefault();
     setHasSearched(true); 
 
-    const recetasActuales = auth.recetas || []; 
-
+    const recetasActuales = auth.recetas || [];
     const term = searchTerm.toLowerCase();
 
-    // Filtramos asegurándonos que los campos existan antes de llamar a .toLowerCase() o .some()
     let filteredRecetas = recetasActuales.filter(receta => {
-        // --- NUEVO: Solo buscar en recetas confirmadas ---
-        if (!receta.confirmado) {
-          return false;
-        }
-
+    
+        // 3. Lógica de búsqueda por término
         const tituloMatch = receta.titulo && receta.titulo.toLowerCase().includes(term);
         const descMatch = receta.descripcion && receta.descripcion.toLowerCase().includes(term);
         const ingMatch = Array.isArray(receta.ingredientes) && receta.ingredientes.some(ing => ing.nombre && ing.nombre.toLowerCase().includes(term));
-        
         return tituloMatch || descMatch || ingMatch;
     });
 
+    // Filtro por etiquetas (se mantiene igual)
     if (selectedFilters.length > 0) {
         filteredRecetas = filteredRecetas.filter(receta =>
             Array.isArray(receta.etiquetasDieteticas) &&
