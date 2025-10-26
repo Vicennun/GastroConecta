@@ -1,12 +1,12 @@
 // src/components/RecetaCard.jsx
 
 import React from 'react';
-import { Card, Button } from 'react-bootstrap';
+import { Card, Button, Badge } from 'react-bootstrap';
+// 1. Importamos 'Link'
 import { Link } from 'react-router-dom';
 
 export default function RecetaCard({ receta }) {
   return (
-    // 1. Añadimos clases para sombra y quitar borde
     <Card className="mb-4 shadow-sm border-0">
       <Card.Img 
         variant="top" 
@@ -15,18 +15,33 @@ export default function RecetaCard({ receta }) {
         style={{ height: '200px', objectFit: 'cover' }} 
       />
       <Card.Body>
+        
+        {receta.confirmado && (
+          <Badge bg="success" className="mb-2 d-block">
+            Confirmada
+          </Badge>
+        )}
+        {!receta.confirmado && (
+          <Badge bg="warning" text="dark" className="mb-2 d-block">
+            Pendiente de Confirmación
+          </Badge>
+        )}
+
         <Card.Title>{receta.titulo}</Card.Title>
         
-        {/* 2. Añadimos el tiempo de preparación */}
         <Card.Subtitle className="mb-2 text-muted">
           <small>
             Tiempo: {receta.tiempoPreparacion || 'No especificado'}
           </small>
         </Card.Subtitle>
 
+        {/* --- 2. AQUÍ ESTÁ EL CAMBIO --- */}
         <Card.Text>
-          Por: {receta.autorNombre}
+          {/* Convertimos el nombre del autor en un enlace */}
+          Por: <Link to={`/perfil/${receta.autorId}`}>{receta.autorNombre}</Link>
         </Card.Text>
+        {/* --- Fin del cambio --- */}
+
         <Button variant="primary" as={Link} to={`/receta/${receta.id}`}>
           Ver Receta
         </Button>
