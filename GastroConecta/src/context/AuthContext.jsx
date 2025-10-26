@@ -1,6 +1,6 @@
 // src/context/AuthContext.jsx
 
-import React, { createContext, useState, useContext } from 'react';
+import React, { createContext, useState, useContext, useEffect } from 'react';
 // Importamos los datos iniciales
 import recetasData from '../data/recetas.json';
 
@@ -45,12 +45,35 @@ export const AuthProvider = ({ children }) => {
   const [recetas, setRecetas] = useState(getRecetasDB);                 // Lista de recetas
   const [usuarios, setUsuarios] = useState(getUsuariosDB);               // Lista de usuarios
 
+  // --- Efecto para actualizar localStorage cuando el usuario cambia (para recetario/seguir) ---
+  useEffect(() => {
+    if (usuarioActual) {
+      localStorage.setItem('currentUser', JSON.stringify(usuarioActual));
+
+      // Actualizar también la lista completa de usuarios en localStorage
+      const usuariosDB = getUsuariosDB();
+      const index = usuariosDB.findIndex(u => u.id === usuarioActual.id);
+      if (index !== -1) {
+        usuariosDB[index] = usuarioActual;
+        localStorage.setItem('usuarios', JSON.stringify(usuariosDB));
+        setUsuarios(usuariosDB); // Actualiza el estado de usuarios
+      }
+    } else {
+      localStorage.removeItem('currentUser');
+    }
+  }, [usuarioActual]);
+
+  // --- Efecto para actualizar localStorage cuando las recetas cambian (likes/comentarios) ---
+  useEffect(() => {
+    localStorage.setItem('recetas', JSON.stringify(recetas));
+  }, [recetas]);
+
+
   // --- FUNCIONES DE AUTENTICACIÓN (Tus Tareas 1 y 2) ---
 
   const register = (nombre, email, password) => {
-    const usuariosDB = getUsuariosDB(); // Obtiene la lista fresca
+    const usuariosDB = getUsuariosDB(); 
     
-    // 1. Revisa si el email ya existe
     const existeUsuario = usuariosDB.find(u => u.email === email);
     if (existeUsuario) {
       throw new Error('El email ya está registrado');
@@ -61,60 +84,176 @@ export const AuthProvider = ({ children }) => {
       id: Date.now(),
       nombre,
       email,
-      password // En una app real, esto debería estar encriptado
+      password, // En una app real, esto debería estar encriptado
+      recetario: [], // <-- NUEVO: Para recetario personal
+      siguiendo: []  // <-- NUEVO: Para sistema de "seguir"
     };
 
-    // 3. Guarda la nueva lista de usuarios en localStorage
     const nuevaListaUsuarios = [...usuariosDB, nuevoUsuario];
     localStorage.setItem('usuarios', JSON.stringify(nuevaListaUsuarios));
-    setUsuarios(nuevaListaUsuarios); // Actualiza el estado
+    setUsuarios(nuevaListaUsuarios); 
     
-    // 4. Inicia sesión automáticamente
-    login(email, password);
+    // Inicia sesión automáticamente
+    // Hacemos una copia para no mutar el estado directamente
+    setUsuarioActual(JSON.parse(JSON.stringify(nuevoUsuario)));
+    localStorage.setItem('currentUser', JSON.stringify(nuevoUsuario));
   };
 
   const login = (email, password) => {
     const usuariosDB = getUsuariosDB();
     
-    // 1. Busca al usuario
     const usuarioEncontrado = usuariosDB.find(
       u => u.email === email && u.password === password
     );
 
     if (usuarioEncontrado) {
-      // 2. Guarda el usuario logueado en localStorage para persistir la sesión
-      localStorage.setItem('currentUser', JSON.stringify(usuarioEncontrado));
-      setUsuarioActual(usuarioEncontrado); // Actualiza el estado
+      // --- NUEVO: Aseguramos que los campos existan ---
+      const usuarioCompleto = {
+        ...usuarioEncontrado,
+        recetario: usuarioEncontrado.recetario || [],
+        siguiendo: usuarioEncontrado.siguiendo || []
+      };
+      
+      localStorage.setItem('currentUser', JSON.stringify(usuarioCompleto));
+      setUsuarioActual(usuarioCompleto);
     } else {
       throw new Error('Email o contraseña incorrectos');
     }
   };
 
   const logout = () => {
-    localStorage.removeItem('currentUser'); // Borra la sesión
-    setUsuarioActual(null); // Actualiza el estado
+    localStorage.removeItem('currentUser'); 
+    setUsuarioActual(null); 
   };
 
   // --- FUNCIONES DE RECETAS (Tu Tarea 4) ---
 
   const agregarReceta = (nuevaReceta) => {
-    // 1. Añade la nueva receta al principio de la lista
     const nuevaListaRecetas = [nuevaReceta, ...recetas];
+    setRecetas(nuevaListaRecetas); 
+    // El useEffect de 'recetas' se encargará de guardar en localStorage
+  };
+
+  // --- NUEVAS FUNCIONALIDADES ---
+
+  // --- Sistema de "Me Gusta" (Like) ---
+  const toggleLike = (recetaId) => {
+    if (!usuarioActual) {
+      alert("Debes iniciar sesión para dar 'me gusta'");
+      return;
+    }
     
-    // 2. Guarda la lista actualizada en localStorage
-    localStorage.setItem('recetas', JSON.stringify(nuevaListaRecetas));
-    setRecetas(nuevaListaRecetas); // Actualiza el estado
+    const userId = usuarioActual.id;
+    
+    setRecetas(prevRecetas => {
+      return prevRecetas.map(receta => {
+        if (receta.id === recetaId) {
+          const likes = receta.likes || [];
+          const yaDioLike = likes.includes(userId);
+          
+          if (yaDioLike) {
+            // Quitar Like
+            return { ...receta, likes: likes.filter(id => id !== userId) };
+          } else {
+            // Añadir Like
+            return { ...receta, likes: [...likes, userId] };
+          }
+        }
+        return receta;
+      });
+    });
+  };
+
+  // --- Sistema de Comentarios ---
+  const agregarComentario = (recetaId, textoComentario) => {
+    if (!usuarioActual) {
+      alert("Debes iniciar sesión para comentar");
+      return;
+    }
+
+    const nuevoComentario = {
+      id: Date.now(),
+      autorId: usuarioActual.id,
+      autorNombre: usuarioActual.nombre,
+      texto: textoComentario
+    };
+
+    setRecetas(prevRecetas => {
+      return prevRecetas.map(receta => {
+        if (receta.id === recetaId) {
+          const comentarios = receta.comentarios || [];
+          return { ...receta, comentarios: [...comentarios, nuevoComentario] };
+        }
+        return receta;
+      });
+    });
+  };
+
+  // --- Sistema de Recetario Personal (Guardar Receta) ---
+  const toggleGuardarReceta = (recetaId) => {
+    if (!usuarioActual) {
+      alert("Debes iniciar sesión para guardar recetas");
+      return;
+    }
+
+    setUsuarioActual(prevUsuario => {
+      const recetario = prevUsuario.recetario || [];
+      const yaEstaGuardada = recetario.includes(recetaId);
+      let nuevoRecetario;
+
+      if (yaEstaGuardada) {
+        nuevoRecetario = recetario.filter(id => id !== recetaId);
+      } else {
+        nuevoRecetario = [...recetario, recetaId];
+      }
+      
+      // Devuelve el estado actualizado del usuario
+      return { ...prevUsuario, recetario: nuevoRecetario };
+    });
+    // El useEffect de 'usuarioActual' se encargará de guardar en localStorage
+  };
+
+  // --- Sistema de Seguir Usuarios ---
+  const toggleSeguir = (usuarioId) => {
+    if (!usuarioActual) {
+      alert("Debes iniciar sesión para seguir a otros usuarios");
+      return;
+    }
+    
+    if (usuarioActual.id === usuarioId) {
+      alert("No puedes seguirte a ti mismo");
+      return;
+    }
+
+    setUsuarioActual(prevUsuario => {
+      const siguiendo = prevUsuario.siguiendo || [];
+      const yaLoSigue = siguiendo.includes(usuarioId);
+      let nuevoSiguiendo;
+
+      if (yaLoSigue) {
+        nuevoSiguiendo = siguiendo.filter(id => id !== usuarioId);
+      } else {
+        nuevoSiguiendo = [...siguiendo, usuarioId];
+      }
+      
+      return { ...prevUsuario, siguiendo: nuevoSiguiendo };
+    });
   };
 
 
   // --- Valor que se pasa a los componentes ---
   const value = {
     usuarioActual,
-    recetas,        // <--- Nuevo
+    recetas,        
+    usuarios,       // <-- NUEVO: pasamos la lista de usuarios
     login,
-    register,     // <--- Nuevo
+    register,     
     logout,
-    agregarReceta,  // <--- Nuevo
+    agregarReceta,
+    toggleLike,         // <-- NUEVO
+    agregarComentario,  // <-- NUEVO
+    toggleGuardarReceta, // <-- NUEVO
+    toggleSeguir        // <-- NUEVO
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
