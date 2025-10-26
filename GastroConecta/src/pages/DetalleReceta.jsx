@@ -28,7 +28,32 @@ export default function DetalleReceta() {
       </Container>
     );
   }
+const likes = receta.likes || [];
+  const comentarios = receta.comentarios || [];
+  
+  const dioLike = usuarioActual ? likes.includes(usuarioActual.id) : false;
+  
+  const recetarioUsuario = (usuarioActual && usuarioActual.recetario) ? usuarioActual.recetario : [];
+  const estaGuardada = recetarioUsuario.includes(receta.id);
 
+  const handleLike = () => {
+    toggleLike(receta.id);
+  };
+
+  const handleGuardar = () => {
+    toggleGuardarReceta(receta.id);
+  };
+  
+  const handleSubmitComentario = (e) => {
+    e.preventDefault();
+    if (!nuevoComentario.trim()) {
+      setErrorComentario("El comentario no puede estar vacío");
+      return;
+    }
+    setErrorComentario('');
+    agregarComentario(receta.id, nuevoComentario);
+    setNuevoComentario(''); // Limpiar el campo
+  };
   // 7. Si la receta SÍ existe, la mostramos (Esta lógica sigue igual)
   return (
     <>
