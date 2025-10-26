@@ -28,9 +28,7 @@ export default function Navegacion() {
             <LinkContainer to="/">
               <Nav.Link>Inicio</Nav.Link>
             </LinkContainer>
-            <LinkContainer to="/buscar">
-              <Nav.Link>Buscar</Nav.Link>
-            </LinkContainer>
+            
           </Nav>
 
           <Nav>

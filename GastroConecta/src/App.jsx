@@ -1,43 +1,38 @@
-// src/App.jsx (VERSIÓN FINAL CORRECTA)
+// src/App.jsx
 
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
-import { Container } from 'react-bootstrap';
 
+// Importa tus componentes (asegúrate que las rutas sean correctas)
 import Navegacion from './components/Navegacion';
 import Home from './pages/Home';
 import Login from './pages/Login';
-import Buscar from './pages/Buscar';
 import Registro from './pages/Registro';
 import CrearReceta from './pages/CrearReceta';
-import MiPerfil from './pages/MiPerfil';
 import DetalleReceta from './pages/DetalleReceta';
-import Footer from './components/footer';
+import MiPerfil from './pages/MiPerfil';
+import Buscar from './pages/Buscar'; // Página placeholder
+import Footer from './components/Footer'; // Revisa si tu archivo se llama Footer.jsx o footer.jsx
 
 function App() {
   return (
-    // --- 1. Usa un <div> o <> aquí, NO un <Container> ---
     <>
-      {/* --- 2. El Navbar va primero, sin márgenes --- */}
       <Navegacion />
-      
-      {/* --- 3. El Container envuelve SOLO las rutas --- */}
-      <Container className="mt-4 flex-grow-1"> {/* Le añadimos un margen superior */}
+
+      {/* CLAVE: Este div es flex-grow-1 (ocupa espacio) Y d-flex flex-column (es contenedor flex) */}
+      <div className="flex-grow-1 d-flex flex-column">
         <Routes>
-          {/* Rutas Públicas */}
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<Login />} />
           <Route path="/registro" element={<Registro />} />
-          <Route path="/buscar" element={<Buscar />} />
-          <Route path="/receta/:id" element={<DetalleReceta />} />
-
-          {/* Rutas "Privadas" */}
           <Route path="/crear-receta" element={<CrearReceta />} />
+          <Route path="/receta/:id" element={<DetalleReceta />} />
           <Route path="/mi-perfil" element={<MiPerfil />} />
+          <Route path="/buscar" element={<Buscar />} />
         </Routes>
-      </Container>
+      </div>
 
-      <Footer /> {/* 3. AÑADIR FOOTER AL FINAL */}
+      <Footer />
     </>
   );
 }
