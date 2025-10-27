@@ -6,6 +6,7 @@ import recetasData from '../data/recetas.json';
 
 // --- Funciones auxiliares para localStorage ---
 
+
 const usuariosData = [
   {
     "id": 1,
@@ -62,18 +63,23 @@ const getCurrentUserDB = () => {
 };
 
 // --- Creación del Contexto ---
-const AuthContext = createContext();
+export const AuthContext = createContext();
 
 export const useAuth = () => {
   return useContext(AuthContext);
 };
 
 // --- Proveedor del Contexto ---
-export const AuthProvider = ({ children }) => {
+export const AuthProvider = ({ children, initialRecipes = null }) => {
   
   const [usuarioActual, setUsuarioActual] = useState(getCurrentUserDB); 
-  const [recetas, setRecetas] = useState(getRecetasDB);
+  const [recetas, setRecetas] = useState(() => {
+  if (initialRecipes) return initialRecipes;
+  const localRecetas = localStorage.getItem('recetas');
+  return localRecetas ? JSON.parse(localRecetas) : recetasData; // Usa recetasData como fallback
+});
   const [usuarios, setUsuarios] = useState(getUsuariosDB);
+  
 
   // --- EFECTO PARA SINCRONIZAR ESTADOS ---
   useEffect(() => {

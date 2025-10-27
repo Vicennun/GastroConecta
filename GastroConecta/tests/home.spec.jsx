@@ -4,6 +4,7 @@ import { describe, it, expect } from 'vitest';
 import { AuthProvider } from '../src/context/AuthContext';
 import { BrowserRouter } from 'react-router-dom';
 import Home from '../src/pages/Home';
+import recetasTestData from '../src/data/recetas.json';
 
 describe('Componente Home', () => {
 
@@ -47,15 +48,14 @@ describe('Componente Home', () => {
   });
 
    it('muestra la sección "Recetas Recientes" cuando hay recetas', async () => {
-    render(
-      <BrowserRouter>
-        <AuthProvider>
-          <Home />
-        </AuthProvider>
-      </BrowserRouter>
-    );
-    // Usar 'findByText' (asíncrono) y 'await' para esperar a que aparezca
-    expect(await screen.findByText("Recetas Recientes")).toBeInTheDocument();
+  render(
+    <BrowserRouter>
+      <AuthProvider initialRecipes={recetasTestData}> {/* <-- Aquí */}
+        <Home />
+      </AuthProvider>
+    </BrowserRouter>
+  );
+  expect(await screen.findByText("Recetas Recientes")).toBeInTheDocument();
 });
 
 });
