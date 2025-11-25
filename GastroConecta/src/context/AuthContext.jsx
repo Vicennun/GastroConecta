@@ -1,4 +1,3 @@
-// src/context/AuthContext.jsx
 
 import React, { createContext, useState, useContext, useEffect } from 'react';
 // Importamos los datos iniciales
@@ -11,10 +10,11 @@ const usuariosData = [
     "id": 1,
     "nombre": "Vicente Núñez",
     "email": "vicente@mail.com",
-    "password": "123", // Simulamos una contraseña
+    "password": "123", 
     "recetario": [],
     "siguiendo": [],
-    "seguidores": []
+    "seguidores": [],
+    "rol": "admin" 
   },
   {
     "id": 2,
@@ -23,18 +23,17 @@ const usuariosData = [
     "password": "123",
     "recetario": [],
     "siguiendo": [],
-    "seguidores": []
+    "seguidores": [],
+    "rol": "admin" 
   }
 ];
-// --- --- --- --- --- --- --- --- --- ---
 
-// --- Funciones auxiliares para localStorage ---
 
 // Carga "usuarios" desde localStorage. Si no existe, usa los datos iniciales.
 const getUsuariosDB = () => {
   const usuarios = localStorage.getItem('usuarios');
   
-  // --- LÓGICA ACTUALIZADA ---
+ 
   if (usuarios) {
     return JSON.parse(usuarios);
   } else {
@@ -50,9 +49,13 @@ const getRecetasDB = () => {
   if (recetas) {
     return JSON.parse(recetas);
   } else {
-    // Si es la primera vez, guarda las recetas base en localStorage
-    localStorage.setItem('recetas', JSON.stringify(recetasData));
-    return recetasData;
+    // Aseguramos que las recetas iniciales tengan el campo 'ratings'
+    const initialRecetasWithRatings = recetasData.map(r => ({
+        ...r, 
+        ratings: r.ratings || [] // Garantiza que exista el campo 'ratings'
+    }));
+    localStorage.setItem('recetas', JSON.stringify(initialRecetasWithRatings));
+    return initialRecetasWithRatings;
   }
 };
 
@@ -61,33 +64,58 @@ const getCurrentUserDB = () => {
   return user ? JSON.parse(user) : null;
 };
 
-// --- Creación del Contexto ---
-const AuthContext = createContext();
+// FUNCIÓN HELPER PARA CÁLCULO DE RATING 
+const calculateAverageRating = (ratings) => {
+    if (!ratings || ratings.length === 0) return 0;
+    const total = ratings.reduce((sum, r) => sum + r.score, 0);
+    // Redondeamos a una cifra decimal
+    return Math.round((total / ratings.length) * 10) / 10;
+};
+// FIN FUNCIÓN HELPER 
+
+//  Creación del Contexto 
+export const AuthContext = createContext();
 
 export const useAuth = () => {
   return useContext(AuthContext);
 };
 
-// --- Proveedor del Contexto ---
-export const AuthProvider = ({ children }) => {
+// Proveedor del Contexto
+export const AuthProvider = ({ children, initialRecipes = null }) => {
   
   const [usuarioActual, setUsuarioActual] = useState(getCurrentUserDB); 
-  const [recetas, setRecetas] = useState(getRecetasDB);
-  const [usuarios, setUsuarios] = useState(getUsuariosDB);
+  const [recetas, setRecetas] = useState(() => {
+  if (initialRecipes) return initialRecipes;
+  const localRecetas = localStorage.getItem('recetas');
+  // Aseguramos que la inicialización desde localStorage también use la estructura con 'ratings'
+  if (localRecetas) {
+      const parsedRecetas = JSON.parse(localRecetas);
+      return parsedRecetas.map(r => ({ ...r, ratings: r.ratings || [] }));
+  }
+  
+  // Si no hay nada, inicializamos con los datos del JSON (que deben tener 'ratings')
+  const initialRecetas = recetasData.map(r => ({ ...r, ratings: r.ratings || [] }));
+  localStorage.setItem('recetas', JSON.stringify(initialRecetas));
+  return initialRecetas;
 
-  // --- EFECTO PARA SINCRONIZAR ESTADOS ---
+});
+  const [usuarios, setUsuarios] = useState(getUsuariosDB);
+  
+
+  //  EFECTO PARA SINCRONIZAR ESTADOS 
   useEffect(() => {
     if (usuarioActual) {
       const usuarioActualizado = usuarios.find(u => u.id === usuarioActual.id);
       if (usuarioActualizado) {
+        // Aseguramos que el usuario actual se mantenga actualizado con la data de usuarios
         setUsuarioActual(usuarioActualizado);
         localStorage.setItem('currentUser', JSON.stringify(usuarioActualizado));
       }
     }
-  }, [usuarios, usuarioActual?.id]); // Dependencia ajustada
+  }, [usuarios, usuarioActual?.id]); 
 
 
-  // --- FUNCIONES DE AUTENTICACIÓN ---
+  // FUNCIONES DE AUTENTICACIÓN
 
   const register = (nombre, email, password) => {
     const usuariosDB = getUsuariosDB(); 
@@ -104,7 +132,8 @@ export const AuthProvider = ({ children }) => {
       password,
       recetario: [],
       siguiendo: [],
-      seguidores: [] // <--- AÑADIDO
+      seguidores: [],
+      rol: "user" // Rol por defecto
     };
 
     const nuevaListaUsuarios = [...usuariosDB, nuevoUsuario];
@@ -137,7 +166,8 @@ export const AuthProvider = ({ children }) => {
   // --- FUNCIONES DE RECETAS ---
 
   const agregarReceta = (nuevaReceta) => {
-    const nuevaListaRecetas = [nuevaReceta, ...recetas];
+    const recetaConRatings = { ...nuevaReceta, ratings: [] }; // Aseguramos que tenga ratings
+    const nuevaListaRecetas = [recetaConRatings, ...recetas];
     localStorage.setItem('recetas', JSON.stringify(nuevaListaRecetas));
     setRecetas(nuevaListaRecetas);
   };
@@ -146,6 +176,14 @@ export const AuthProvider = ({ children }) => {
 
   const toggleLikeReceta = (recetaId) => {
     if (!usuarioActual) return;
+    
+    // Obtener la receta para la verificación de autoría
+    const receta = recetas.find(r => r.id === recetaId);
+
+    // Si el usuario actual es el autor de la receta, no puede darle "Me gusta".
+    if (receta && usuarioActual.id === receta.autorId) {
+        return; 
+    }
 
     const nuevasRecetas = recetas.map(r => {
       if (r.id === recetaId) {
@@ -160,9 +198,17 @@ export const AuthProvider = ({ children }) => {
     setRecetas(nuevasRecetas);
     localStorage.setItem('recetas', JSON.stringify(nuevasRecetas));
   };
-
+  
   const toggleGuardarReceta = (recetaId) => {
     if (!usuarioActual) return;
+
+    //  Obtener la receta
+    const receta = recetas.find(r => r.id === recetaId);
+    
+    // Si el usuario actual es el autor de la receta, no puede guardarla.
+    if (receta && usuarioActual.id === receta.autorId) {
+        return; 
+    }
 
     let usuarioActualizado;
     
@@ -206,7 +252,45 @@ export const AuthProvider = ({ children }) => {
     localStorage.setItem('recetas', JSON.stringify(nuevasRecetas));
   };
 
-  // --- LÓGICA DE SEGUIR (ACTUALIZADA) ---
+  // --- FUNCIÓN DE RATING ---
+  const submitRating = (recetaId, score) => {
+      if (!usuarioActual) return;
+
+      const nuevasRecetas = recetas.map(r => {
+          if (r.id === recetaId) {
+              // Filtrar la calificación existente del usuario, si la hay
+              let ratingsActualizados = (r.ratings || []).filter(r => r.userId !== usuarioActual.id);
+              // Agregar la nueva calificación
+              ratingsActualizados = [...ratingsActualizados, { userId: usuarioActual.id, score }];
+
+              return { ...r, ratings: ratingsActualizados };
+          }
+          return r;
+      });
+
+      setRecetas(nuevasRecetas);
+      localStorage.setItem('recetas', JSON.stringify(nuevasRecetas));
+  };
+  // --- FIN FUNCIÓN DE RATING ---
+
+  const confirmarReceta = (recetaId) => {
+    // Si el usuario actual no es admin, no debería poder hacer esto.
+    if (!usuarioActual || usuarioActual.rol !== 'admin') {
+      console.error('Acceso denegado. Solo administradores pueden confirmar recetas.');
+      return;
+    }
+
+    const nuevasRecetas = recetas.map(r => {
+      if (r.id === recetaId) {
+        return { ...r, confirmado: true };
+      }
+      return r;
+    });
+
+    setRecetas(nuevasRecetas);
+    localStorage.setItem('recetas', JSON.stringify(nuevasRecetas));
+  };
+  
   const toggleSeguirUsuario = (autorId) => {
     if (!usuarioActual || usuarioActual.id === autorId) return;
 
@@ -214,7 +298,7 @@ export const AuthProvider = ({ children }) => {
     let usuarioActualizado;
 
     const nuevosUsuarios = usuarios.map(u => {
-      // Caso 1: Actualizar al usuario actual (el que sigue)
+      // Actualizar al usuario actual (el que sigue)
       if (u.id === usuarioActual.id) {
         const siguiendoActualizado = estoySiguiendo
           ? u.siguiendo.filter(id => id !== autorId) // Dejar de seguir
@@ -224,7 +308,7 @@ export const AuthProvider = ({ children }) => {
         return usuarioActualizado;
       }
       
-      // Caso 2: Actualizar al usuario seguido (el autor)
+      // Actualizar al usuario seguido (el autor)
       if (u.id === autorId) {
         const seguidoresActualizado = estoySiguiendo
           ? u.seguidores.filter(id => id !== usuarioActual.id) // Pierde un seguidor
@@ -256,7 +340,10 @@ export const AuthProvider = ({ children }) => {
     toggleLikeReceta,
     toggleGuardarReceta,
     agregarComentario,
-    toggleSeguirUsuario 
+    toggleSeguirUsuario,
+    confirmarReceta,
+    submitRating,         
+    calculateAverageRating  
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
