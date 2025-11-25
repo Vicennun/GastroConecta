@@ -1,32 +1,46 @@
-// src/pages/DetalleReceta.jsx
-
-// 1. Asegúrate de importar useState
 import React, { useState } from 'react'; 
 import { useParams, Link } from 'react-router-dom';
-// 2. Asegúrate de importar todo lo necesario de react-bootstrap
-import { Container, Row, Col, Image, Badge, Button, ListGroup, Card, Form, Alert } from 'react-bootstrap';
-
+import { 
+  Container, 
+  Row, 
+  Col, 
+  Image, 
+  Badge, 
+  Button, 
+  ListGroup, 
+  Card, 
+  Form, 
+  Alert,
+  Toast, 
+  ToastContainer 
+} from 'react-bootstrap';
 import { useAuth } from '../context/AuthContext';
+import RatingDisplay, { StarDisplay } from '../components/SistemaRating'; 
 
 export default function DetalleReceta() {
   const { id } = useParams();
   
-  // 3. Obtén todas las funciones y datos necesarios del contexto
-  const { recetas, usuarioActual, toggleLike, agregarComentario, toggleGuardarReceta } = useAuth();
+  const { 
+    recetas, 
+    usuarioActual, 
+    toggleLikeReceta, 
+    agregarComentario, 
+    toggleGuardarReceta,
+    toggleSeguirUsuario 
+  } = useAuth();
 
-  // 4. Declara los estados para el formulario de comentarios
   const [nuevoComentario, setNuevoComentario] = useState('');
   const [errorComentario, setErrorComentario] = useState('');
+  
+  const [showSaveError, setShowSaveError] = useState(false);
+  // [MODIFICACIÓN 1] Nuevo estado para el error de "Me gusta"
+  const [showLikeError, setShowLikeError] = useState(false); 
 
-  // 5. CORRECCIÓN: Convierte el 'id' de la URL (string) a número antes de buscar
   const recetaIdNumero = Number(id);
   const receta = Array.isArray(recetas) ? recetas.find((r) => r.id === recetaIdNumero) : null;
-  // La línea original era: const receta = recetas.find((r) => r.id == id);
-
-  // --- El resto del código que maneja el caso de receta no encontrada ---
+  
   if (!receta) {
-    // Es posible que las recetas aún no se hayan cargado, o el ID sea inválido
-    console.error(`No se encontró la receta con ID: ${id}`); // Añade esto para depuración
+    console.error(`No se encontró la receta con ID: ${id}`); 
     return (
       <Container className="text-center mt-5">
         <h2>Receta no encontrada</h2>
@@ -36,7 +50,6 @@ export default function DetalleReceta() {
     );
   }
 
-  // --- Lógica para "Me Gusta", "Guardar" y Comentarios (como la teníamos antes) ---
   const likes = receta.likes || [];
   const comentarios = receta.comentarios || [];
   
@@ -44,13 +57,44 @@ export default function DetalleReceta() {
   
   const recetarioUsuario = (usuarioActual && usuarioActual.recetario) ? usuarioActual.recetario : [];
   const estaGuardada = recetarioUsuario.includes(receta.id);
+  
+  // --- VERIFICACIÓN de AUTORÍA ---
+  const esMiReceta = usuarioActual && usuarioActual.id === receta.autorId;
 
+  // --- MODIFICACIÓN: handleLike ---
   const handleLike = () => {
-    toggleLike(receta.id);
+    if (!usuarioActual) return;
+    
+    // [MODIFICACIÓN 2] Lógica para mostrar el error solo al hacer clic si es mi receta
+    if (esMiReceta) {
+      setShowLikeError(true);
+      // Ocultar automáticamente el Toast después de 3 segundos
+      setTimeout(() => setShowLikeError(false), 3000); 
+      // Aseguramos que el error de Guardar esté oculto
+      setShowSaveError(false); 
+      return; 
+    }
+    
+    // Si se puede dar like, ocultar el error (por si acaso)
+    setShowLikeError(false);
+    toggleLikeReceta(receta.id); 
   };
+  // --- FIN MODIFICACIÓN ---
+
 
   const handleGuardar = () => {
-    toggleGuardarReceta(receta.id);
+     if (!usuarioActual) return;
+     
+     if (esMiReceta) {
+      setShowSaveError(true);
+      setTimeout(() => setShowSaveError(false), 3000); 
+      // Aseguramos que el error de Like esté oculto
+      setShowLikeError(false); 
+      return; 
+     }
+
+     setShowSaveError(false);
+     toggleGuardarReceta(receta.id);
   };
   
   const handleSubmitComentario = (e) => {
@@ -59,149 +103,164 @@ export default function DetalleReceta() {
       setErrorComentario("El comentario no puede estar vacío");
       return;
     }
-    setErrorComentario('');
-    agregarComentario(receta.id, nuevoComentario);
-    setNuevoComentario(''); 
+     if (usuarioActual) {
+      setErrorComentario('');
+      agregarComentario(receta.id, nuevoComentario);
+      setNuevoComentario(''); 
+     }
   };
-  // --- FIN LÓGICA ---
-
+  
   return (
-    
-    // 6. Añade el Container que faltaba en la versión que subiste
-    <Container className="my-5"> 
-      <Row>
-        {/* --- Columna de Imagen y Título --- */}
-        <Col md={8}>
-          
-          {!receta.confirmado && (
-            <Badge bg="warning" text="dark" className="mb-2">
-              Pendiente de Confirmación
-            </Badge>
-          )}
-
-          <h1>{receta.titulo}</h1>
-          <p className="text-muted">
-            {/* --- AQUÍ ESTÁ EL CAMBIO --- */}
-            Por: <Link to={`/perfil/${receta.autorId}`}>{receta.autorNombre}</Link> | Tiempo: {receta.tiempoPreparacion}
-            {/* --- FIN DEL CAMBIO --- */}
-          </p>
-          
-          <Image 
-            src={receta.foto} 
-            alt={receta.titulo} 
-            fluid 
-            rounded 
-            className="mb-3" 
-            style={{ width: '100%', maxHeight: '400px', objectFit: 'cover' }}
-          />
-          
-          <p>{receta.descripcion}</p>
-
-          <div>
-            {/* 7. Añade comprobación por si etiquetasDieteticas no existe */}
-            {receta.etiquetasDieteticas && receta.etiquetasDieteticas.map((etiqueta, index) => (
-              <Badge pill bg="info" key={index} className="me-2 mb-2">
-                {etiqueta}
+    <> {/* Fragment para envolver el contenedor principal y el ToastContainer */}
+      <Container className="my-5"> 
+        <Row>
+          <Col md={8}>
+            {!receta.confirmado && (
+              <Badge bg="warning" text="dark" className="mb-2">
+                Pendiente de Confirmación
               </Badge>
-            ))}
-          </div>
-          
-          {/* Botones de Acción */}
-          <div className="mt-3">
-            <Button 
-              variant={dioLike ? "primary" : "outline-primary"} 
-              onClick={handleLike} 
-              className="me-2"
-              disabled={!usuarioActual} // Deshabilitado si no hay usuario
-            >
-              {dioLike ? "Te gusta" : "Me gusta"} ({likes.length})
-            </Button>
-            <Button 
-              variant={estaGuardada ? "success" : "outline-success"}
-              onClick={handleGuardar}
-              disabled={!usuarioActual} // Deshabilitado si no hay usuario
-            >
-              {estaGuardada ? "Guardado" : "Guardar"}
-            </Button>
-          </div>
-        </Col>
-
-        {/* --- Columna de Ingredientes --- */}
-        <Col md={4}>
-          <h4>Ingredientes</h4>
-          <ListGroup variant="flush">
-            {/* 8. Añade comprobación por si ingredientes no existe */}
-            {receta.ingredientes && receta.ingredientes.map((ing, index) => (
-              <ListGroup.Item key={index}>
-                <strong>{ing.cantidad}</strong> {ing.nombre}
-              </ListGroup.Item>
-            ))}
-          </ListGroup>
-        </Col>
-      </Row>
-
-      <hr className="my-4" />
-
-      {/* --- Fila de Pasos --- */}
-      <Row>
-        <Col>
-          <h4>Preparación</h4>
-          <ListGroup as="ol" numbered>
-             {/* 9. Añade comprobación por si pasos no existe */}
-            {receta.pasos && receta.pasos.map((paso, index) => (
-              <ListGroup.Item as="li" key={index}>{paso}</ListGroup.Item>
-            ))}
-          </ListGroup>
-        </Col>
-      </Row>
-
-      {/* --- Fila de Comentarios --- */}
-      <Row className="my-5">
-        <Col md={8}>
-          <h4>Comentarios ({comentarios.length})</h4>
-          
-          {/* Formulario para agregar comentario */}
-          {usuarioActual ? (
-            <Card className="mb-4">
-              <Card.Body>
-                <Card.Title>Deja un comentario</Card.Title>
-                <Form onSubmit={handleSubmitComentario}>
-                  {errorComentario && <Alert variant="danger" size="sm">{errorComentario}</Alert>}
-                  <Form.Group className="mb-2">
-                    <Form.Control 
-                      as="textarea" 
-                      rows={3} 
-                      value={nuevoComentario}
-                      onChange={(e) => setNuevoComentario(e.target.value)}
-                      placeholder="Escribe tu opinión..."
-                    />
-                  </Form.Group>
-                  <Button variant="primary" type="submit">Publicar</Button>
-                </Form>
-              </Card.Body>
-            </Card>
-          ) : (
-            <Alert variant="secondary">
-              <Link to="/login">Inicia sesión</Link> para dejar un comentario.
-            </Alert>
-          )}
-
-          {/* Lista de comentarios existentes */}
-          <ListGroup variant="flush">
-            {comentarios.length > 0 ? (
-              comentarios.map(com => (
-                <ListGroup.Item key={com.id} className="mb-2 border-bottom">
-                  <strong>{com.autorNombre}</strong>
-                  <p className="mb-0 mt-1">{com.texto}</p>
-                </ListGroup.Item>
-              ))
-            ) : (
-              <p className="text-muted">No hay comentarios aún. ¡Sé el primero!</p>
             )}
-          </ListGroup>
+            <h1>{receta.titulo}</h1>
+            <p className="text-muted">
+              Por: <Link to={`/perfil/${receta.autorId}`}>{receta.autorNombre}</Link> | Tiempo: {receta.tiempoPreparacion}
+            </p>
+            
+            <RatingDisplay receta={receta} />
+            
+            <Image 
+              src={receta.foto} 
+              alt={receta.titulo} 
+              fluid 
+              rounded 
+              className="mb-3" 
+              style={{ width: '100%', maxHeight: '400px', objectFit: 'cover' }}
+            />
+            <p>{receta.descripcion}</p>
+            <div>
+              {receta.etiquetasDieteticas && receta.etiquetasDieteticas.map((etiqueta, index) => (
+                <Badge pill bg="info" key={index} className="me-2 mb-2">
+                  {etiqueta}
+                </Badge>
+              ))}
+            </div>
 
-        </Col>
-      </Row>
-    </Container> // Cierra el Container
+            {/* Mensaje de error de Guardar se ha movido al ToastContainer */}
+
+            {/* Botones de Acción */}
+            <div className="mt-3">
+              <Button 
+                variant={dioLike ? "primary" : "outline-primary"} 
+                onClick={handleLike} 
+                className="me-2"
+                // Deshabilitado si no hay usuario logueado
+                disabled={!usuarioActual} 
+                // [MODIFICACIÓN 3] Tooltip para "Me gusta"
+                title={esMiReceta ? "No puedes dar Me gusta a tu propia receta" : ""} 
+              >
+                {dioLike ? "Te gusta" : "Me gusta"} ({likes.length})
+              </Button>
+              <Button 
+                variant={estaGuardada ? "success" : "outline-success"}
+                onClick={handleGuardar}
+                disabled={!usuarioActual} 
+                title={esMiReceta ? "No puedes guardar tu propia receta" : ""}
+              >
+                {estaGuardada ? "Guardado" : "Guardar"}
+              </Button>
+            </div>
+          </Col>
+
+          {/* --- Columna de Ingredientes (sin cambios) --- */}
+          <Col md={4}>
+            <h4>Ingredientes</h4>
+            <ListGroup variant="flush">
+              {receta.ingredientes && receta.ingredientes.map((ing, index) => (
+                <ListGroup.Item key={index}>
+                  <strong>{ing.cantidad}</strong> {ing.nombre}
+                </ListGroup.Item>
+              ))}
+            </ListGroup>
+          </Col>
+        </Row>
+
+        <hr className="my-4" />
+
+        {/* --- Fila de Pasos (sin cambios) --- */}
+        <Row>
+          <Col>
+            <h4>Preparación</h4>
+            <ListGroup as="ol" numbered>
+              {receta.pasos && receta.pasos.map((paso, index) => (
+                <ListGroup.Item as="li" key={index}>{paso}</ListGroup.Item>
+              ))}
+            </ListGroup>
+          </Col>
+        </Row>
+
+        {/* --- Fila de Comentarios (sin cambios) --- */}
+        <Row className="my-5">
+          <Col md={8}>
+            <h4>Comentarios ({comentarios.length})</h4>
+            {usuarioActual ? (
+              <Card className="mb-4">
+                <Card.Body>
+                  <Card.Title>Deja un comentario</Card.Title>
+                  <Form onSubmit={handleSubmitComentario}>
+                    {errorComentario && <Alert variant="danger" size="sm">{errorComentario}</Alert>}
+                    <Form.Group className="mb-2">
+                      <Form.Control 
+                        as="textarea" 
+                        rows={3} 
+                        value={nuevoComentario}
+                        onChange={(e) => setNuevoComentario(e.target.value)}
+                        placeholder="Escribe tu opinión..."
+                      />
+                    </Form.Group>
+                    <Button variant="primary" type="submit">Publicar</Button>
+                  </Form>
+                </Card.Body>
+              </Card>
+            ) : (
+              <Alert variant="secondary">
+                <Link to="/login">Inicia sesión</Link> para dejar un comentario.
+              </Alert>
+            )}
+            <ListGroup variant="flush">
+              {comentarios.length > 0 ? (
+                comentarios.map(com => (
+                  <ListGroup.Item key={com.id} className="mb-2 border-bottom">
+                    <strong>{com.autorNombre}</strong>
+                    <p className="mb-0 mt-1">{com.texto}</p>
+                  </ListGroup.Item>
+                ))
+              ) : (
+                <p className="text-muted">No hay comentarios aún. ¡Sé el primero!</p>
+              )}
+            </ListGroup>
+          </Col>
+        </Row>
+      </Container> 
+
+      {/* --- NUEVO: TOAST FLOTANTE DINÁMICO --- */}
+      <ToastContainer position="bottom-end" className="p-3" style={{ zIndex: 1050 }}>
+          <Toast 
+              onClose={() => { setShowSaveError(false); setShowLikeError(false); }}
+              show={showSaveError || showLikeError} 
+              delay={3000} 
+              autohide
+              bg="warning" 
+          >
+              <Toast.Header>
+                  <strong className="me-auto text-dark">Advertencia</strong>
+              </Toast.Header>
+              <Toast.Body className="text-dark"> 
+                 
+                  {showSaveError && "No puedes guardar tu propia receta en tu recetario."}
+                  {showLikeError && "No puedes dar Me gusta a tu propia receta."}
+              </Toast.Body>
+          </Toast>
+      </ToastContainer>
+     
+    </>
   );
 }
