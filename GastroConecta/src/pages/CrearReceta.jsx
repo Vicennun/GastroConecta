@@ -1,12 +1,10 @@
-// src/pages/CrearReceta.jsx
-
 import React, { useState } from 'react';
-// 1. QUITAMOS 'Container' de las importaciones
+
 import { Row, Col, Form, Button, Alert } from 'react-bootstrap';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 
-// Lista fija de opciones para el RF-003
+
 const OPCIONES_DIETETICAS = [
   "Sin Gluten",
   "Vegano",
@@ -25,7 +23,8 @@ export default function CrearReceta() {
   const [titulo, setTitulo] = useState('');
   const [descripcion, setDescripcion] = useState('');
   const [tiempo, setTiempo] = useState('');
-  const [fotoUrl, setFotoUrl] = useState('');
+  // MODIFICACIÓN 1: Cambiamos fotoUrl a fotoFile
+  const [fotoFile, setFotoFile] = useState(null);
   const [ingredientes, setIngredientes] = useState('');
   const [pasos, setPasos] = useState('');
   const [etiquetas, setEtiquetas] = useState([]);
@@ -68,6 +67,11 @@ export default function CrearReceta() {
       
     const pasosArray = pasos.split('\n').filter(line => line.trim() !== '');
 
+    // MODIFICACIÓN 2: Usar URL.createObjectURL para mostrar la imagen local
+    const foto = fotoFile 
+        ? URL.createObjectURL(fotoFile)
+        : 'https://via.placeholder.com/300x200.png?text=Sin+Foto';
+
     // Construimos el objeto de la nueva receta
     const nuevaReceta = {
       id: Date.now(),
@@ -76,7 +80,7 @@ export default function CrearReceta() {
       tiempoPreparacion: tiempo,
       autorId: usuarioActual.id,
       autorNombre: usuarioActual.nombre, // <-- Esto ahora usa el usuario real
-      foto: fotoUrl || 'https://via.placeholder.com/300x200.png?text=Sin+Foto',
+      foto: foto, // <-- Usamos la URL calculada
       ingredientes: ingredientesArray,
       pasos: pasosArray,
       etiquetasDieteticas: etiquetas,
@@ -145,18 +149,23 @@ export default function CrearReceta() {
                 />
               </Form.Group>
             </Col>
-            {/* --- URL de la Foto --- */}
+            
+            {/* --- MODIFICACIÓN 3: Campo Subir Foto --- */}
             <Col md={6}>
               <Form.Group className="mb-3" controlId="formFoto">
-                <Form.Label>URL de la Foto</Form.Label>
+                <Form.Label>Subir Foto de la Receta</Form.Label>
                 <Form.Control
-                  type="text"
-                  placeholder="https://..."
-                  value={fotoUrl}
-                  onChange={(e) => setFotoUrl(e.target.value)}
+                  type="file"
+                  accept="image/png, image/jpeg" 
+                  onChange={(e) => setFotoFile(e.target.files[0])}
                 />
+                <Form.Text muted>
+                  Sube un archivo .png o .jpg.
+                </Form.Text>
               </Form.Group>
             </Col>
+            {/* --- Fin de la modificación del campo --- */}
+            
           </Row>
 
           {/* --- Ingredientes --- */}
