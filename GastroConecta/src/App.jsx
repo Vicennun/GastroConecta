@@ -1,5 +1,3 @@
-// src/App.jsx
-
 import React from 'react';
 import { Routes, Route } from 'react-router-dom';
 
@@ -11,9 +9,10 @@ import Registro from './pages/Registro';
 import CrearReceta from './pages/CrearReceta';
 import DetalleReceta from './pages/DetalleReceta';
 import MiPerfil from './pages/MiPerfil';
-import Buscar from './pages/Buscar'; // Página placeholder
-import Footer from './components/Footer'; // Revisa si tu archivo se llama Footer.jsx o footer.jsx
-import PerfilUsuario from './pages/PerfilUsuario'; // <-- 1. IMPORTAR
+import Buscar from './pages/Buscar'; 
+import Footer from './components/Footer';
+import PerfilUsuario from './pages/PerfilUsuario';
+import AdminPage from './pages/AdminPage'; 
 
 function App() {
   return (
@@ -31,6 +30,7 @@ function App() {
           <Route path="/mi-perfil" element={<MiPerfil />} />
           <Route path="/perfil/:id" element={<PerfilUsuario />} /> 
           <Route path="/buscar" element={<Buscar />} />
+          <Route path="/admin" element={<AdminPage />} /> {/* <-- 2. AÑADIR NUEVA RUTA */}
         </Routes>
       </div>
 
