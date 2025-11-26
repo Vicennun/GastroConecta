@@ -1,29 +1,39 @@
 // src/pages/MiPerfil.jsx
 import React from 'react';
 import { useAuth } from '../context/AuthContext';
-// 1. Añadimos Link
 import { Container, Row, Col, Card, Tab, Nav, ListGroup } from 'react-bootstrap';
-import { Link, Navigate } from 'react-router-dom'; // <-- 1. IMPORTAR LINK
+import { Link, Navigate } from 'react-router-dom';
 import RecetaCard from '../components/RecetaCard';
 
 export default function MiPerfil() {
+  // Agregamos 'usuarios' para que no falle la carga de seguidores
   const { usuarioActual, recetas, usuarios } = useAuth();
 
   if (!usuarioActual) {
     return <Navigate to="/login" />;
   }
 
+  // --- PROTECCIÓN 1: Listas de amigos ---
+  // Si el backend no trae estos campos, usamos arrays vacíos []
   const siguiendo = usuarioActual.siguiendo || [];
   const seguidores = usuarioActual.seguidores || [];
 
-  const listaSiguiendo = usuarios.filter(u => siguiendo.includes(u.id));
-  const listaSeguidores = usuarios.filter(u => seguidores.includes(u.id));
+  // Evitamos fallos al filtrar si 'usuarios' aún no carga
+  const listaUsuariosSeguros = usuarios || [];
+  const listaSiguiendo = listaUsuariosSeguros.filter(u => siguiendo.includes(u.id));
+  const listaSeguidores = listaUsuariosSeguros.filter(u => seguidores.includes(u.id));
 
+  // --- PROTECCIÓN 2: Mis Recetas ---
   const misRecetas = recetas.filter(
     (r) => r.autorId === usuarioActual.id
   );
+
+  // --- PROTECCIÓN 3 (CRÍTICA): Recetario (Donde te falló) ---
+  // Extraemos la lista de guardados de forma segura
+  const idsGuardados = usuarioActual.recetario || []; 
+  
   const recetasGuardadas = recetas.filter(
-    (r) => usuarioActual.recetario.includes(r.id)
+    (r) => idsGuardados.includes(r.id)
   );
 
   return (
@@ -35,7 +45,8 @@ export default function MiPerfil() {
               Mi Perfil
             </Card.Header>
             <Card.Body className="p-4">
-              <Card.Title>{usuarioActual.nombre}</Card.Title>
+              {/* Usamos .name porque eso viene del Backend Java */}
+              <Card.Title>{usuarioActual.name}</Card.Title>
               <Card.Subtitle className="mb-4 text-muted">
                 {usuarioActual.email}
               </Card.Subtitle>
@@ -59,7 +70,6 @@ export default function MiPerfil() {
                 </Nav>
                 
                 <Tab.Content>
-                  {/* ... (Pestañas Mis Recetas y Guardadas sin cambios) ... */}
                   <Tab.Pane eventKey="mis-recetas">
                     <Row>
                       {misRecetas.length > 0 ? (
@@ -73,6 +83,7 @@ export default function MiPerfil() {
                       )}
                     </Row>
                   </Tab.Pane>
+                  
                   <Tab.Pane eventKey="guardadas">
                     <Row>
                       {recetasGuardadas.length > 0 ? (
@@ -87,15 +98,12 @@ export default function MiPerfil() {
                     </Row>
                   </Tab.Pane>
 
-
-                  {/* --- 2. CONTENIDO DE PESTAÑAS ACTUALIZADO --- */}
                   <Tab.Pane eventKey="siguiendo">
                     <ListGroup variant="flush">
                       {listaSiguiendo.length > 0 ? (
                         listaSiguiendo.map(user => (
-                          // Convertido en un Link clickeable
                           <ListGroup.Item key={user.id} as={Link} to={`/perfil/${user.id}`} action>
-                            {user.nombre}
+                            {user.name} {/* Ojo: Usar .name aquí también */}
                           </ListGroup.Item>
                         ))
                       ) : (
@@ -103,13 +111,13 @@ export default function MiPerfil() {
                       )}
                     </ListGroup>
                   </Tab.Pane>
+                  
                   <Tab.Pane eventKey="seguidores">
                     <ListGroup variant="flush">
                       {listaSeguidores.length > 0 ? (
                         listaSeguidores.map(user => (
-                          // Convertido en un Link clickeable
                           <ListGroup.Item key={user.id} as={Link} to={`/perfil/${user.id}`} action>
-                            {user.nombre}
+                            {user.name} {/* Ojo: Usar .name aquí también */}
                           </ListGroup.Item>
                         ))
                       ) : (
@@ -117,7 +125,6 @@ export default function MiPerfil() {
                       )}
                     </ListGroup>
                   </Tab.Pane>
-                  {/* --- FIN DEL CAMBIO --- */}
 
                 </Tab.Content>
               </Tab.Container>
