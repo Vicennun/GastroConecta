@@ -7,7 +7,7 @@ import { Link, Navigate } from 'react-router-dom'; // <-- 1. IMPORTAR LINK
 import RecetaCard from '../components/RecetaCard';
 
 export default function MiPerfil() {
-  const { usuarioActual, recetas, usuarios } = useAuth();
+  const { usuarioActual, recetas, usuarios} = useAuth();
 
   if (!usuarioActual) {
     return <Navigate to="/login" />;
@@ -35,7 +35,7 @@ export default function MiPerfil() {
               Mi Perfil
             </Card.Header>
             <Card.Body className="p-4">
-              <Card.Title>{usuarioActual.nombre}</Card.Title>
+              <Card.Title>{usuarioActual.name}</Card.Title>
               <Card.Subtitle className="mb-4 text-muted">
                 {usuarioActual.email}
               </Card.Subtitle>

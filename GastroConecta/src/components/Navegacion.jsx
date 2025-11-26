@@ -38,7 +38,8 @@ export default function Navegacion() {
                   <Nav.Link>Crear Receta</Nav.Link>
                 </LinkContainer>
                 <LinkContainer to="/mi-perfil">
-                  <Nav.Link>Hola, {usuarioActual.nombre}</Nav.Link>
+                  {/* CAMBIO AQUÍ: .nombre -> .name */}
+                  <Nav.Link>Hola, {usuarioActual.name}</Nav.Link>
                 </LinkContainer>
                 
                 <Button variant="outline-secondary" onClick={logout} className="ms-2">

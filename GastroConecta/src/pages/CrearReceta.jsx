@@ -70,19 +70,15 @@ export default function CrearReceta() {
 
     // Construimos el objeto de la nueva receta
     const nuevaReceta = {
-      id: Date.now(),
       titulo,
       descripcion,
       tiempoPreparacion: tiempo,
       autorId: usuarioActual.id,
-      autorNombre: usuarioActual.nombre, // <-- Esto ahora usa el usuario real
+      autorNombre: usuarioActual.name, // <-- Esto ahora usa el usuario real
       foto: fotoUrl || 'https://via.placeholder.com/300x200.png?text=Sin+Foto',
       ingredientes: ingredientesArray,
       pasos: pasosArray,
-      etiquetasDieteticas: etiquetas,
-      confirmado: false, 
-      likes: [], 
-      comentarios: []
+      etiquetasDieteticas: etiquetas
     };
 
     // --- 3. CAMBIO EN LA LÓGICA DE GUARDADO ---

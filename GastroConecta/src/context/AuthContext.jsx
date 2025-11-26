@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 // URL BASE (Asegúrate de tener tu .env o cambiar la IP aquí)
-const API_URL = import.meta.env.VITE_API_URL || "http://34.229.20.25  :8080/api/v1";
+const API_URL = import.meta.env.VITE_API_URL || "http://34.229.20.25:8080/api/v1";
 
 const getCurrentUserDB = () => {
   const user = localStorage.getItem('currentUser');
@@ -24,6 +24,7 @@ export const AuthProvider = ({ children }) => {
   // --- EFECTO: Cargar Recetas al iniciar ---
   useEffect(() => {
     cargarRecetas();
+    cargarUsuarios();
   }, []);
 
   // --- EFECTO: Persistir sesión ---
@@ -151,6 +152,18 @@ export const AuthProvider = ({ children }) => {
     toggleGuardarReceta,
     agregarComentario,
     toggleSeguirUsuario
+  };
+
+  const cargarUsuarios = async () => {
+    try {
+      const res = await fetch(`${API_URL}/users`); // Ojo: es /users, no /recetas
+      if (res.ok) {
+        const data = await res.json();
+        setUsuarios(data);
+      }
+    } catch (error) {
+      console.error("Error cargando usuarios:", error);
+    }
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
