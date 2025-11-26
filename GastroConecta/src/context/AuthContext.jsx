@@ -1,334 +1,196 @@
-
 import React, { createContext, useState, useContext, useEffect } from 'react';
-// Importamos los datos iniciales
-import recetasData from '../data/recetas.json';
 
-// --- Funciones auxiliares para localStorage ---
-
-const usuariosData = [
-  {
-    "id": 1,
-    "nombre": "Vicente Núñez",
-    "email": "vicente@mail.com",
-    "password": "123", 
-    "recetario": [],
-    "siguiendo": [],
-    "seguidores": [],
-    "rol": "admin" 
-  },
-  {
-    "id": 2,
-    "nombre": "Eduardo Chacana",
-    "email": "eduardo@mail.com",
-    "password": "123",
-    "recetario": [],
-    "siguiendo": [],
-    "seguidores": [],
-    "rol": "admin" 
-  }
-];
-
-
-// Carga "usuarios" desde localStorage. Si no existe, usa los datos iniciales.
-const getUsuariosDB = () => {
-  const usuarios = localStorage.getItem('usuarios');
-  
- 
-  if (usuarios) {
-    return JSON.parse(usuarios);
-  } else {
-    // Si es la primera vez, guarda los usuarios base en localStorage
-    localStorage.setItem('usuarios', JSON.stringify(usuariosData));
-    return usuariosData;
-  }
-};
-
-// Carga "recetas" desde localStorage. Si no existe, usa las del JSON.
-const getRecetasDB = () => {
-  const recetas = localStorage.getItem('recetas');
-  if (recetas) {
-    return JSON.parse(recetas);
-  } else {
-    // Aseguramos que las recetas iniciales tengan el campo 'ratings'
-    const initialRecetasWithRatings = recetasData.map(r => ({
-        ...r, 
-        ratings: r.ratings || [] // Garantiza que exista el campo 'ratings'
-    }));
-    localStorage.setItem('recetas', JSON.stringify(initialRecetasWithRatings));
-    return initialRecetasWithRatings;
-  }
-};
+// CAMBIA ESTO POR TU IP DE AWS
+const API_URL = import.meta.env.VITE_API_URL || "http://52.91.30.245:8080/api/v1";
 
 const getCurrentUserDB = () => {
   const user = localStorage.getItem('currentUser');
   return user ? JSON.parse(user) : null;
 };
 
-// FUNCIÓN HELPER PARA CÁLCULO DE RATING 
+// HELPER: Calcular promedio (Para los ratings)
 const calculateAverageRating = (ratings) => {
     if (!ratings || ratings.length === 0) return 0;
     const total = ratings.reduce((sum, r) => sum + r.score, 0);
-    // Redondeamos a una cifra decimal
     return Math.round((total / ratings.length) * 10) / 10;
 };
-// FIN FUNCIÓN HELPER 
 
-//  Creación del Contexto 
 export const AuthContext = createContext();
 
 export const useAuth = () => {
   return useContext(AuthContext);
 };
 
-// Proveedor del Contexto
-export const AuthProvider = ({ children, initialRecipes = null }) => {
+export const AuthProvider = ({ children }) => {
   
   const [usuarioActual, setUsuarioActual] = useState(getCurrentUserDB); 
-  const [recetas, setRecetas] = useState(() => {
-  if (initialRecipes) return initialRecipes;
-  const localRecetas = localStorage.getItem('recetas');
-  // Aseguramos que la inicialización desde localStorage también use la estructura con 'ratings'
-  if (localRecetas) {
-      const parsedRecetas = JSON.parse(localRecetas);
-      return parsedRecetas.map(r => ({ ...r, ratings: r.ratings || [] }));
-  }
-  
-  // Si no hay nada, inicializamos con los datos del JSON (que deben tener 'ratings')
-  const initialRecetas = recetasData.map(r => ({ ...r, ratings: r.ratings || [] }));
-  localStorage.setItem('recetas', JSON.stringify(initialRecetas));
-  return initialRecetas;
+  const [recetas, setRecetas] = useState([]); 
+  const [usuarios, setUsuarios] = useState([]); 
 
-});
-  const [usuarios, setUsuarios] = useState(getUsuariosDB);
-  
+  useEffect(() => {
+    cargarRecetas();
+    cargarUsuarios();
+  }, []);
 
-  //  EFECTO PARA SINCRONIZAR ESTADOS 
   useEffect(() => {
     if (usuarioActual) {
-      const usuarioActualizado = usuarios.find(u => u.id === usuarioActual.id);
-      if (usuarioActualizado) {
-        // Aseguramos que el usuario actual se mantenga actualizado con la data de usuarios
-        setUsuarioActual(usuarioActualizado);
-        localStorage.setItem('currentUser', JSON.stringify(usuarioActualizado));
+      localStorage.setItem('currentUser', JSON.stringify(usuarioActual));
+    } else {
+      localStorage.removeItem('currentUser');
+    }
+  }, [usuarioActual]);
+
+  // --- CARGA DE DATOS ---
+  const cargarRecetas = async () => {
+    try {
+      const res = await fetch(`${API_URL}/recetas`);
+      if (res.ok) {
+        const data = await res.json();
+        setRecetas(data);
       }
-    }
-  }, [usuarios, usuarioActual?.id]); 
-
-
-  // FUNCIONES DE AUTENTICACIÓN
-
-  const register = (nombre, email, password) => {
-    const usuariosDB = getUsuariosDB(); 
-    
-    const existeUsuario = usuariosDB.find(u => u.email === email);
-    if (existeUsuario) {
-      throw new Error('El email ya está registrado');
-    }
-
-    const nuevoUsuario = {
-      id: Date.now(),
-      nombre,
-      email,
-      password,
-      recetario: [],
-      siguiendo: [],
-      seguidores: [],
-      rol: "user" // Rol por defecto
-    };
-
-    const nuevaListaUsuarios = [...usuariosDB, nuevoUsuario];
-    localStorage.setItem('usuarios', JSON.stringify(nuevaListaUsuarios));
-    setUsuarios(nuevaListaUsuarios);
-    
-    login(email, password);
+    } catch (error) { console.error(error); }
   };
 
-  const login = (email, password) => {
-    const usuariosDB = getUsuariosDB();
-    
-    const usuarioEncontrado = usuariosDB.find(
-      u => u.email === email && u.password === password
-    );
+  const cargarUsuarios = async () => {
+    try {
+      const res = await fetch(`${API_URL}/users`); 
+      if (res.ok) {
+        const data = await res.json();
+        setUsuarios(data);
+      }
+    } catch (error) { console.error(error); }
+  };
 
-    if (usuarioEncontrado) {
-      localStorage.setItem('currentUser', JSON.stringify(usuarioEncontrado));
-      setUsuarioActual(usuarioEncontrado); 
-    } else {
-      throw new Error('Email o contraseña incorrectos');
-    }
+  // --- AUTH ---
+  const register = async (nombre, email, password) => {
+    const response = await fetch(`${API_URL}/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name: nombre, email, password, rol: 'user' })
+    });
+    if (!response.ok) throw new Error('Error al registrar');
+    const nuevoUsuario = await response.json();
+    setUsuarioActual(nuevoUsuario);
+  };
+
+  const login = async (email, password) => {
+    const response = await fetch(`${API_URL}/users/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    if (!response.ok) throw new Error('Credenciales incorrectas');
+    const usuarioEncontrado = await response.json();
+    setUsuarioActual(usuarioEncontrado);
   };
 
   const logout = () => {
-    localStorage.removeItem('currentUser');
     setUsuarioActual(null);
+    localStorage.removeItem('currentUser');
   };
 
-  // --- FUNCIONES DE RECETAS ---
-
-  const agregarReceta = (nuevaReceta) => {
-    const recetaConRatings = { ...nuevaReceta, ratings: [] }; // Aseguramos que tenga ratings
-    const nuevaListaRecetas = [recetaConRatings, ...recetas];
-    localStorage.setItem('recetas', JSON.stringify(nuevaListaRecetas));
-    setRecetas(nuevaListaRecetas);
-  };
-
-  // --- NUEVAS FUNCIONALIDADES ---
-
-  const toggleLikeReceta = (recetaId) => {
-    if (!usuarioActual) return;
-    
-    // Obtener la receta para la verificación de autoría
-    const receta = recetas.find(r => r.id === recetaId);
-
-    // Si el usuario actual es el autor de la receta, no puede darle "Me gusta".
-    if (receta && usuarioActual.id === receta.autorId) {
-        return; 
-    }
-
-    const nuevasRecetas = recetas.map(r => {
-      if (r.id === recetaId) {
-        const likesActualizados = r.likes.includes(usuarioActual.id)
-          ? r.likes.filter(id => id !== usuarioActual.id)
-          : [...r.likes, usuarioActual.id];
-        return { ...r, likes: likesActualizados };
-      }
-      return r;
-    });
-
-    setRecetas(nuevasRecetas);
-    localStorage.setItem('recetas', JSON.stringify(nuevasRecetas));
-  };
-  
-  const toggleGuardarReceta = (recetaId) => {
-    if (!usuarioActual) return;
-
-    //  Obtener la receta
-    const receta = recetas.find(r => r.id === recetaId);
-    
-    // Si el usuario actual es el autor de la receta, no puede guardarla.
-    if (receta && usuarioActual.id === receta.autorId) {
-        return; 
-    }
-
-    let usuarioActualizado;
-    
-    const nuevosUsuarios = usuarios.map(u => {
-      if (u.id === usuarioActual.id) {
-        const recetarioActualizado = u.recetario.includes(recetaId)
-          ? u.recetario.filter(id => id !== recetaId) 
-          : [...u.recetario, recetaId]; 
-        
-        usuarioActualizado = { ...u, recetario: recetarioActualizado };
-        return usuarioActualizado;
-      }
-      return u;
-    });
-
-    setUsuarios(nuevosUsuarios);
-    localStorage.setItem('usuarios', JSON.stringify(nuevosUsuarios));
-    setUsuarioActual(usuarioActualizado);
-    localStorage.setItem('currentUser', JSON.stringify(usuarioActualizado));
-  };
-
-  const agregarComentario = (recetaId, textoComentario) => {
-    if (!usuarioActual) return;
-
-    const nuevoComentario = {
-      id: Date.now(),
-      autorId: usuarioActual.id,
-      autorNombre: usuarioActual.nombre,
-      texto: textoComentario,
-      fecha: new Date().toISOString()
+  // --- ACCIONES RECETAS ---
+  const agregarReceta = async (nuevaReceta) => {
+    // Convertimos ingredientes de objetos a lista simple de strings para el backend
+    const recetaBackend = {
+        ...nuevaReceta,
+        ingredientesSimples: nuevaReceta.ingredientes.map(i => `${i.nombre} - ${i.cantidad}`)
     };
 
-    const nuevasRecetas = recetas.map(r => {
-      if (r.id === recetaId) {
-        return { ...r, comentarios: [nuevoComentario, ...r.comentarios] };
-      }
-      return r;
+    const response = await fetch(`${API_URL}/recetas`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(recetaBackend)
     });
-
-    setRecetas(nuevasRecetas);
-    localStorage.setItem('recetas', JSON.stringify(nuevasRecetas));
-  };
-
-  // --- FUNCIÓN DE RATING ---
-  const submitRating = (recetaId, score) => {
-      if (!usuarioActual) return;
-
-      const nuevasRecetas = recetas.map(r => {
-          if (r.id === recetaId) {
-              // Filtrar la calificación existente del usuario, si la hay
-              let ratingsActualizados = (r.ratings || []).filter(r => r.userId !== usuarioActual.id);
-              // Agregar la nueva calificación
-              ratingsActualizados = [...ratingsActualizados, { userId: usuarioActual.id, score }];
-
-              return { ...r, ratings: ratingsActualizados };
-          }
-          return r;
-      });
-
-      setRecetas(nuevasRecetas);
-      localStorage.setItem('recetas', JSON.stringify(nuevasRecetas));
-  };
-  // --- FIN FUNCIÓN DE RATING ---
-
-  const confirmarReceta = (recetaId) => {
-    // Si el usuario actual no es admin, no debería poder hacer esto.
-    if (!usuarioActual || usuarioActual.rol !== 'admin') {
-      console.error('Acceso denegado. Solo administradores pueden confirmar recetas.');
-      return;
+    
+    if (response.ok) {
+        const creada = await response.json();
+        // Reconstruimos ingredientes para el frontend localmente
+        creada.ingredientes = creada.ingredientesSimples.map(s => {
+            const [n, c] = s.split(' - ');
+            return { nombre: n, cantidad: c || '' };
+        });
+        setRecetas([creada, ...recetas]);
+    } else {
+        throw new Error("Error al guardar en servidor");
     }
-
-    const nuevasRecetas = recetas.map(r => {
-      if (r.id === recetaId) {
-        return { ...r, confirmado: true };
-      }
-      return r;
-    });
-
-    setRecetas(nuevasRecetas);
-    localStorage.setItem('recetas', JSON.stringify(nuevasRecetas));
   };
-  
-  const toggleSeguirUsuario = (autorId) => {
-    if (!usuarioActual || usuarioActual.id === autorId) return;
 
-    const estoySiguiendo = usuarioActual.siguiendo.includes(autorId);
-    let usuarioActualizado;
-
-    const nuevosUsuarios = usuarios.map(u => {
-      // Actualizar al usuario actual (el que sigue)
-      if (u.id === usuarioActual.id) {
-        const siguiendoActualizado = estoySiguiendo
-          ? u.siguiendo.filter(id => id !== autorId) // Dejar de seguir
-          : [...u.siguiendo, autorId]; // Seguir
-        
-        usuarioActualizado = { ...u, siguiendo: siguiendoActualizado };
-        return usuarioActualizado;
-      }
-      
-      // Actualizar al usuario seguido (el autor)
-      if (u.id === autorId) {
-        const seguidoresActualizado = estoySiguiendo
-          ? u.seguidores.filter(id => id !== usuarioActual.id) // Pierde un seguidor
-          : [...(u.seguidores || []), usuarioActual.id]; // Gana un seguidor
-        
-        return { ...u, seguidores: seguidoresActualizado };
-      }
-
-      return u;
-    });
-
-    setUsuarios(nuevosUsuarios);
-    localStorage.setItem('usuarios', JSON.stringify(nuevosUsuarios));
-    setUsuarioActual(usuarioActualizado);
-    localStorage.setItem('currentUser', JSON.stringify(usuarioActualizado));
+  const toggleLikeReceta = async (recetaId) => {
+    if (!usuarioActual) return;
+    const res = await fetch(`${API_URL}/recetas/${recetaId}/like?userId=${usuarioActual.id}`, { method: 'POST' });
+    if(res.ok) {
+        const actualizada = await res.json();
+        actualizarRecetaLocal(actualizada);
+    }
   };
-  // --- FIN DE LÓGICA DE SEGUIR ---
 
+  const agregarComentario = async (recetaId, texto) => {
+    if (!usuarioActual) return;
+    const comentario = { autorId: usuarioActual.id, autorNombre: usuarioActual.name, texto };
+    const res = await fetch(`${API_URL}/recetas/${recetaId}/comentar`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(comentario)
+    });
+    if(res.ok) {
+        const actualizada = await res.json();
+        actualizarRecetaLocal(actualizada);
+    }
+  };
 
-  // --- Valor que se pasa a los componentes ---
+  // --- NUEVAS FUNCIONES (Rating, Confirmar, Seguir, Guardar) ---
+
+  const submitRating = async (recetaId, score) => {
+    if (!usuarioActual) return;
+    const rating = { userId: usuarioActual.id, score };
+    const res = await fetch(`${API_URL}/recetas/${recetaId}/rate`, {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(rating)
+    });
+    if(res.ok) {
+        const actualizada = await res.json();
+        actualizarRecetaLocal(actualizada);
+    }
+  };
+
+  const confirmarReceta = async (recetaId) => {
+    if (!usuarioActual || usuarioActual.rol !== 'admin') return;
+    const res = await fetch(`${API_URL}/recetas/${recetaId}/confirmar`, { method: 'PUT' });
+    if(res.ok) {
+        const actualizada = await res.json();
+        actualizarRecetaLocal(actualizada);
+    }
+  };
+
+  const toggleGuardarReceta = async (recetaId) => {
+    if (!usuarioActual) return;
+    const res = await fetch(`${API_URL}/users/${usuarioActual.id}/guardar/${recetaId}`, { method: 'POST' });
+    if (res.ok) {
+      const userUpdate = await res.json();
+      setUsuarioActual(userUpdate);
+    }
+  };
+
+  const toggleSeguirUsuario = async (targetId) => {
+    if (!usuarioActual) return;
+    const res = await fetch(`${API_URL}/users/${usuarioActual.id}/seguir/${targetId}`, { method: 'POST' });
+    if (res.ok) {
+      const userUpdate = await res.json();
+      setUsuarioActual(userUpdate);
+      cargarUsuarios(); // Recargamos para ver cambios en seguidores del otro
+    }
+  };
+
+  // Helper para actualizar estado local sin recargar todo
+  const actualizarRecetaLocal = (recetaActualizada) => {
+     // Formateamos ingredientes de vuelta
+     if(recetaActualizada.ingredientesSimples) {
+         recetaActualizada.ingredientes = recetaActualizada.ingredientesSimples.map(s => {
+            const [n, c] = s.split(' - ');
+            return { nombre: n, cantidad: c || '' };
+        });
+     }
+     setRecetas(prev => prev.map(r => r.id === recetaActualizada.id ? recetaActualizada : r));
+  };
+
   const value = {
     usuarioActual,
     recetas,
@@ -342,8 +204,8 @@ export const AuthProvider = ({ children, initialRecipes = null }) => {
     agregarComentario,
     toggleSeguirUsuario,
     confirmarReceta,
-    submitRating,         
-    calculateAverageRating  
+    submitRating,
+    calculateAverageRating
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
