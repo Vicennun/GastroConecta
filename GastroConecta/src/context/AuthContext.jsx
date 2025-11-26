@@ -46,7 +46,28 @@ export const AuthProvider = ({ children }) => {
       const res = await fetch(`${API_URL}/recetas`);
       if (res.ok) {
         const data = await res.json();
-        setRecetas(data);
+        
+        // TRANSFORMACIÓN MÁGICA: Convertir strings del backend a objetos para el frontend
+        const recetasFormateadas = data.map(receta => {
+            let ingredientesObjetos = [];
+            
+            // Si el backend trae 'ingredientesSimples', los convertimos
+            if (receta.ingredientesSimples && receta.ingredientesSimples.length > 0) {
+                ingredientesObjetos = receta.ingredientesSimples.map(texto => {
+                    // Separamos por el guión " - " que usamos al guardar
+                    const partes = texto.split(' - ');
+                    return { 
+                        nombre: partes[0] || texto, 
+                        cantidad: partes[1] || '' 
+                    };
+                });
+            }
+            
+            // Devolvemos la receta con el campo 'ingredientes' lleno
+            return { ...receta, ingredientes: ingredientesObjetos };
+        });
+
+        setRecetas(recetasFormateadas);
       }
     } catch (error) { console.error(error); }
   };
