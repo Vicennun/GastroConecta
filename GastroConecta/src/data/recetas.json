@@ -26,7 +26,8 @@
     "likes": [1, 2],
     "comentarios": [
       { "id": 1, "autorId": 2, "autorNombre": "Eduardo Chacana", "texto": "¡Qué buena receta! La probé y quedó genial." }
-      ]
+      ],
+    "ratings": []
   },
   {
     "id": 102,
@@ -53,7 +54,8 @@
     "etiquetasDieteticas": ["Vegano", "Sin Lácteos", "Apto para Diabéticos"],
     "confirmado": true,
     "likes": [1],
-    "comentarios": []
+    "comentarios": [],
+    "ratings": []
   },
   {
     "id": 103,
@@ -78,6 +80,7 @@
     "etiquetasDieteticas": ["Sin Gluten", "Sin Lácteos"],
     "confirmado": true,
     "likes": [],
-    "comentarios": []
+    "comentarios": [],
+    "ratings": []
   }
 ]

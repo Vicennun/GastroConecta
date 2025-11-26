@@ -1,4 +1,3 @@
-// src/components/Navegacion.jsx
 
 import React from 'react';
 import { Navbar, Nav, Container, Button } from 'react-bootstrap';
@@ -8,12 +7,14 @@ import { useAuth } from '../context/AuthContext';
 export default function Navegacion() {
   
   const { usuarioActual, logout } = useAuth();
+  //Determinar si el usuario es administrador
+  const isAdmin = usuarioActual && usuarioActual.rol === 'admin';
 
   return (
-    // 'mb-4' añade un margen abajo
+   
     <Navbar expand="lg" bg="dark" variant="dark">
       
-      {/* --- AQUÍ ESTÁ EL CAMBIO --- */}
+    
       <Container fluid> 
         
         <LinkContainer to="/">
@@ -29,6 +30,13 @@ export default function Navegacion() {
               <Nav.Link>Inicio</Nav.Link>
             </LinkContainer>
             
+
+            {isAdmin && (
+              <LinkContainer to="/admin">
+                <Nav.Link>Administración</Nav.Link>
+              </LinkContainer>
+            )}
+            
           </Nav>
 
           <Nav>
@@ -38,7 +46,6 @@ export default function Navegacion() {
                   <Nav.Link>Crear Receta</Nav.Link>
                 </LinkContainer>
                 <LinkContainer to="/mi-perfil">
-                  {/* CAMBIO AQUÍ: .nombre -> .name */}
                   <Nav.Link>Hola, {usuarioActual.name}</Nav.Link>
                 </LinkContainer>
                 
@@ -60,7 +67,7 @@ export default function Navegacion() {
 
         </Navbar.Collapse>
         
-      </Container> {/* --- CIERRA EL 'fluid' --- */}
+      </Container>
     </Navbar>
   );
 }

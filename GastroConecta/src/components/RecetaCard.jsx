@@ -1,11 +1,17 @@
-// src/components/RecetaCard.jsx
-
 import React from 'react';
 import { Card, Button, Badge } from 'react-bootstrap';
-// 1. Importamos 'Link'
+
 import { Link } from 'react-router-dom';
+import { useAuth } from '../context/AuthContext'; 
+import { StarDisplay } from './SistemaRating'; 
 
 export default function RecetaCard({ receta }) {
+  const { calculateAverageRating } = useAuth(); 
+  
+  //Calcular el rating promedio
+  const averageRating = calculateAverageRating(receta.ratings);
+  const totalVotes = receta.ratings ? receta.ratings.length : 0;
+  
   return (
     <Card className="mb-4 shadow-sm border-0">
       <Card.Img 
@@ -29,18 +35,24 @@ export default function RecetaCard({ receta }) {
 
         <Card.Title>{receta.titulo}</Card.Title>
         
+        
+        <div className="mb-2">
+            <StarDisplay rating={averageRating} count={totalVotes} size="1rem"/>
+        </div>
+       
+        
         <Card.Subtitle className="mb-2 text-muted">
           <small>
             Tiempo: {receta.tiempoPreparacion || 'No especificado'}
           </small>
         </Card.Subtitle>
 
-        {/* --- 2. AQUÍ ESTÁ EL CAMBIO --- */}
+        
         <Card.Text>
-          {/* Convertimos el nombre del autor en un enlace */}
+          
           Por: <Link to={`/perfil/${receta.autorId}`}>{receta.autorNombre}</Link>
         </Card.Text>
-        {/* --- Fin del cambio --- */}
+        
 
         <Button variant="primary" as={Link} to={`/receta/${receta.id}`}>
           Ver Receta
