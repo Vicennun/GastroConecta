@@ -40,7 +40,7 @@ export default function PerfilUsuario() {
         <Col md={10}>
           <Card className="shadow-sm border-0">
             <Card.Header as="h2" className="text-center p-3">
-              Perfil de {usuario.nombre}
+              Perfil de {usuario.name}
             </Card.Header>
             <Card.Body className="p-4">
               
@@ -50,7 +50,7 @@ export default function PerfilUsuario() {
                   onClick={() => toggleSeguirUsuario(usuario.id)}
                   className="mb-3 w-100"
                 >
-                  {estaSiguiendo ? `Dejar de seguir a ${usuario.nombre}` : `Seguir a ${usuario.nombre}`}
+                  {estaSiguiendo ? `Dejar de seguir a ${usuario.name}` : `Seguir a ${usuario.name}`}
                 </Button>
               )}
               
@@ -77,7 +77,7 @@ export default function PerfilUsuario() {
                         ))
                       ) : (
                         // Texto actualizado para reflejar la nueva lógica
-                        <Col><p className="text-muted">{usuario.nombre} aún no ha publicado recetas.</p></Col>
+                        <Col><p className="text-muted">{usuario.name} aún no ha publicado recetas.</p></Col>
                       )}
                     </Row>
                   </Tab.Pane>
@@ -90,7 +90,7 @@ export default function PerfilUsuario() {
                           </ListGroup.Item>
                         ))
                       ) : (
-                        <p className="text-muted">{usuario.nombre} aún no tiene seguidores.</p>
+                        <p className="text-muted">{usuario.name} aún no tiene seguidores.</p>
                       )}
                     </ListGroup>
                   </Tab.Pane>

@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 // URL BASE (Asegúrate de tener tu .env o cambiar la IP aquí)
-const API_URL = import.meta.env.VITE_API_URL || "http://34.228.199.34:8080/api/v1";
+const API_URL = import.meta.env.VITE_API_URL || "http://54.165.32.253:8080/api/v1";
 
 const getCurrentUserDB = () => {
   const user = localStorage.getItem('currentUser');
@@ -136,9 +136,60 @@ export const AuthProvider = ({ children }) => {
   };
 
   // (Opcional) Funciones pendientes de backend real
-  const toggleGuardarReceta = (id) => console.log("Falta endpoint guardar");
-  const agregarComentario = (id, txt) => console.log("Falta endpoint comentario");
-  const toggleSeguirUsuario = (id) => console.log("Falta endpoint seguir");
+  const toggleGuardarReceta = async (recetaId) => {
+    if (!usuarioActual) return;
+    try {
+      const res = await fetch(`${API_URL}/users/${usuarioActual.id}/guardar/${recetaId}`, {
+        method: 'POST'
+      });
+      if (res.ok) {
+        const usuarioActualizado = await res.json();
+        setUsuarioActual(usuarioActualizado); // Actualizamos al usuario con su nuevo recetario
+      }
+    } catch (error) {
+      console.error("Error guardando receta:", error);
+    }
+  };
+
+  const agregarComentario = async (recetaId, texto) => {
+    if (!usuarioActual) return;
+    const comentario = {
+        autorId: usuarioActual.id,
+        autorNombre: usuarioActual.name,
+        texto: texto
+    };
+
+    try {
+        const res = await fetch(`${API_URL}/recetas/${recetaId}/comentar`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(comentario)
+        });
+        if (res.ok) {
+            const recetaActualizada = await res.json();
+            setRecetas(prev => prev.map(r => r.id === recetaId ? recetaActualizada : r));
+        }
+    } catch (error) {
+        console.error("Error comentando:", error);
+    }
+  };
+
+  const toggleSeguirUsuario = async (targetId) => {
+    if (!usuarioActual) return;
+    try {
+        const res = await fetch(`${API_URL}/users/${usuarioActual.id}/seguir/${targetId}`, {
+            method: 'POST'
+        });
+        if (res.ok) {
+            const usuarioActualizado = await res.json();
+            setUsuarioActual(usuarioActualizado);
+            // También recargamos la lista global de usuarios para que se actualicen los contadores
+            cargarUsuarios(); 
+        }
+    } catch (error) {
+        console.error("Error siguiendo usuario:", error);
+    }
+  };
 
   const value = {
     usuarioActual,
