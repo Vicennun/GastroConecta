@@ -2,7 +2,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 // URL BASE (Asegúrate de tener tu .env o cambiar la IP aquí)
-const API_URL = import.meta.env.VITE_API_URL || "http://34.229.20.25:8080/api/v1";
+const API_URL = import.meta.env.VITE_API_URL || "http://34.228.199.34:8080/api/v1";
 
 const getCurrentUserDB = () => {
   const user = localStorage.getItem('currentUser');
