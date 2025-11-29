@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 
 // CAMBIA ESTO POR TU IP DE AWS
-const API_URL = import.meta.env.VITE_API_URL || "http://52.91.30.245:8080/api/v1";
+const API_URL = import.meta.env.VITE_API_URL || "http://54.225.48.61:8080/api/v1";
 
 const getCurrentUserDB = () => {
   const user = localStorage.getItem('currentUser');

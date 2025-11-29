@@ -86,7 +86,7 @@ export default function PerfilUsuario() {
                       {(usuario.seguidores || []).length > 0 ? (
                         usuarios.filter(u => usuario.seguidores.includes(u.id)).map(user => (
                           <ListGroup.Item key={user.id} as={Link} to={`/perfil/${user.id}`} action>
-                            {user.nombre}
+                            {user.name}
                           </ListGroup.Item>
                         ))
                       ) : (
